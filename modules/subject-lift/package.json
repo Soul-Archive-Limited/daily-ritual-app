@@ -1,0 +1,10 @@
+{
+  "name": "subject-lift",
+  "version": "0.1.0",
+  "description": "Cuts the main subject out of a photo with iOS Vision (lift subject from background).",
+  "main": "index.ts",
+  "license": "MIT",
+  "author": "Soul Archive Ltd",
+  "homepage": "https://github.com/Soul-Archive-Limited/daily-ritual",
+  "private": true
+}

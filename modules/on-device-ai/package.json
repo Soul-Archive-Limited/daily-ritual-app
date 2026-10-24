@@ -1,0 +1,10 @@
+{
+  "name": "on-device-ai",
+  "version": "0.1.0",
+  "description": "Runs Apple's on-device language model (FoundationModels, iOS 26+) for short text answers.",
+  "main": "index.ts",
+  "license": "MIT",
+  "author": "Soul Archive Ltd",
+  "homepage": "https://github.com/Soul-Archive-Limited/daily-ritual",
+  "private": true
+}

@@ -1,0 +1,49 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "daily-ritual",
+  // Your Cloudflare account id (run `npx wrangler whoami`). Self-hosting: replace it and database_id below.
+  "account_id": "8a423f60aa5b78df5763a9877746b80e",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-19",
+  // Served at daily-ritual.fragrant-base-6293.workers.dev; no per-version preview links.
+  "workers_dev": true,
+  "preview_urls": false,
+  "observability": { "enabled": true },
+
+  // The website (built from ../web) is served from the same origin, so the session cookie just works.
+  // API paths always reach the Worker; every other path is the website (single-page app).
+  "assets": {
+    "directory": "../web/dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/auth/*", "/sync", "/me", "/geo", "/signout", "/account", "/health"]
+  },
+
+  // Replace database_id with the id printed by `npx wrangler d1 create daily-ritual`.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "daily-ritual",
+      "database_id": "b644cdb8-2efb-48c2-8fff-887df5aa8d5c",
+      "migrations_dir": "migrations"
+    }
+  ],
+
+  // Workers Rate Limiting. namespace_id only has to be unique within the account.
+  "ratelimits": [
+    { "name": "AUTH_LIMIT", "namespace_id": "4101", "simple": { "limit": 10, "period": 60 } },
+    { "name": "SYNC_LIMIT", "namespace_id": "4102", "simple": { "limit": 30, "period": 60 } },
+    { "name": "GEO_LIMIT", "namespace_id": "4103", "simple": { "limit": 30, "period": 60 } }
+  ],
+
+  "vars": {
+    // Comma lists. Apple: app bundle id, later the website's Services ID.
+    "APPLE_AUDIENCES": "com.soularchive.dailyritual,com.soularchive.dailyritual.web",
+    // Google OAuth client ids (iOS client, later the web client).
+    "GOOGLE_AUDIENCES": "42132424459-un4meb62tlar5ja1kchg6rkhh6a6v4mi.apps.googleusercontent.com,42132424459-l4cgdtp3mcq4smkatrhlr3lnr1uo38vl.apps.googleusercontent.com",
+    // Extra browser origins allowed besides this Worker's own origin. Leave empty to allow only same-origin.
+    "ALLOWED_ORIGINS": ""
+  }
+  // Secret (not in this file): SESSION_SECRET — `npx wrangler secret put SESSION_SECRET`.
+  // Locally it comes from .dev.vars (see .dev.vars.example).
+}

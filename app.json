@@ -1,0 +1,150 @@
+{
+  "expo": {
+    "name": "Daily Ritual",
+    "slug": "daily-ritual",
+    "owner": "soul-archive-limited",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "dailyritual",
+    "userInterfaceStyle": "automatic",
+    "backgroundColor": "#F2F2F7",
+    "ios": {
+      "bundleIdentifier": "com.soularchive.dailyritual",
+      "supportsTablet": true,
+      "icon": "./assets/expo.icon",
+      "config": {
+        "usesNonExemptEncryption": false
+      },
+      "infoPlist": {
+        "UISupportedInterfaceOrientations~ipad": [
+          "UIInterfaceOrientationPortrait",
+          "UIInterfaceOrientationPortraitUpsideDown",
+          "UIInterfaceOrientationLandscapeLeft",
+          "UIInterfaceOrientationLandscapeRight"
+        ]
+      },
+      "requireFullScreen": false,
+      "usesAppleSignIn": true
+    },
+    "android": {
+      "package": "com.soularchive.dailyritual",
+      "adaptiveIcon": {
+        "backgroundColor": "#090b0a",
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "backgroundImage": "./assets/images/android-icon-background.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+      }
+    },
+    "web": {
+      "output": "single",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#F2F2F7",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 76,
+          "dark": {
+            "backgroundColor": "#000000",
+            "image": "./assets/images/splash-icon.png"
+          }
+        }
+      ],
+      "expo-sqlite",
+      "expo-localization",
+      "expo-sharing",
+      [
+        "expo-notifications",
+        {
+          "color": "#1F9D6E",
+          "enableRemoteNotifications": false
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Daily Ritual uses your location to show the city, sunrise, sunset and today's UV where you are.",
+          "isIosBackgroundLocationEnabled": false,
+          "isAndroidBackgroundLocationEnabled": false,
+          "locationAlwaysAndWhenInUsePermission": false,
+          "locationAlwaysPermission": false,
+          "motionPermission": false
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Daily Ritual uses the camera for skin check-in photos and product photos. Photos stay on this phone.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false,
+          "barcodeScannerEnabled": false
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Daily Ritual lets you pick a product or skin photo from your library. Photos stay on this phone.",
+          "cameraPermission": "Daily Ritual uses the camera for skin check-in photos and product photos. Photos stay on this phone.",
+          "microphonePermission": false
+        }
+      ],
+      "expo-status-bar",
+      [
+        "expo-widgets",
+        {
+          "groupIdentifier": "group.com.soularchive.dailyritual",
+          "widgets": [
+            {
+              "name": "TodayWidget",
+              "displayName": "Today",
+              "description": "Today’s progress and your next step.",
+              "ios": {
+                "supportedFamilies": [
+                  "systemSmall",
+                  "systemMedium",
+                  "accessoryCircular",
+                  "accessoryRectangular"
+                ],
+                "initialLayout": "./src/widgets/TodayWidget.tsx"
+              }
+            }
+          ]
+        }
+      ],
+      "expo-apple-authentication",
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.42132424459-un4meb62tlar5ja1kchg6rkhh6a6v4mi"
+        }
+      ],
+      "expo-image"
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    },
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "c06907dd-6325-49db-87b3-df79a331633c"
+      },
+      "googleIosClientId": "42132424459-un4meb62tlar5ja1kchg6rkhh6a6v4mi.apps.googleusercontent.com",
+      "googleWebClientId": "42132424459-l4cgdtp3mcq4smkatrhlr3lnr1uo38vl.apps.googleusercontent.com"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/c06907dd-6325-49db-87b3-df79a331633c"
+    },
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    }
+  }
+}
