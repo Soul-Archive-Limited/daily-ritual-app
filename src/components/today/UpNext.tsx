@@ -1,83 +1,62 @@
-import * as Haptics from 'expo-haptics';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
+import Animated, { FadeIn } from 'react-native-reanimated';
 
-import { Bar, MiniRing } from '@/components/bits';
-import { Button, Card, T } from '@/components/ui';
+import { SlideToConfirm } from '@/components/glow/SlideToConfirm';
+import { Card, T } from '@/components/ui';
 import { useStore } from '@/data/store';
-import { nextUp, slotPct, type DayInfo } from '@/logic/scoring';
+import { nextUp, type DayInfo } from '@/logic/scoring';
 import { colors, font, SLOTS } from '@/theme/tokens';
 
+/** The next undone step for the time of day, big, with a slide to mark it done. */
 export function UpNext({ k, info, isToday }: { k: string; info: DayInfo; isToday: boolean }) {
   const s = useStore()!;
   const nu = isToday ? nextUp(info) : null;
   const slot = nu ? SLOTS.find((z) => z.id === nu.slot)! : null;
-  const sub = `${info.n} of ${info.total} done${info.skipped.length ? ` · ${info.skipped.length} skipped` : ''}`;
+
+  if (!nu || !slot) {
+    const all = info.total > 0 && info.n === info.total;
+    return (
+      <Card>
+        <T variant="eyebrow">{isToday ? 'Up next' : 'This day'}</T>
+        <Text style={styles.name}>
+          {all ? 'All done for today' : isToday ? 'Only water left' : `${info.n} of ${info.total} done`}
+        </Text>
+        <T variant="sub">
+          {all ? 'Rest easy. Your glow is safe.' : isToday ? 'Sip through the evening to finish.' : 'Tap any step below to fix it.'}
+        </T>
+      </Card>
+    );
+  }
 
   return (
     <Card>
-      <View style={styles.top}>
-        <View style={{ flex: 1 }}>
-          <T variant="h2">{isToday ? 'Up next' : 'This day'}</T>
-          <T variant="sub">{sub}</T>
-        </View>
-        <MiniRing p={info.p} />
-      </View>
-
-      {nu && slot ? (
-        <>
-          <View style={styles.next}>
-            <View style={[styles.dot, { backgroundColor: slot.color }]} />
-            <View style={{ flex: 1 }}>
-              <T variant="label">{slot.name}</T>
-              <Text style={styles.name}>{nu.step.name}</Text>
-              {nu.step.product ? <T variant="sub">{nu.step.product}</T> : null}
-            </View>
-          </View>
-          <Button
-            label="Mark done"
-            icon="checkmark"
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              s.tick(k, nu.step.id);
-            }}
-          />
-        </>
-      ) : (
-        <View style={styles.next}>
-          <Text style={styles.name}>
-            {info.total && info.n === info.total
-              ? 'All done'
-              : isToday
-                ? 'Only water left'
-                : `${info.total - info.n} not ticked`}
-          </Text>
-        </View>
-      )}
-
-      <View style={styles.minis}>
-        {SLOTS.map((sl) => {
-          const z = info.slot[sl.id];
-          return (
-            <View key={sl.id} style={styles.mini}>
-              <T variant="label">{sl.name}</T>
-              <Text style={styles.miniNum}>
-                {z.d}/{z.n}
-              </Text>
-              <Bar p={slotPct(z)} color={sl.color} />
-            </View>
-          );
-        })}
-      </View>
+      <Text style={styles.label}>
+        Up next · <Text style={{ color: slot.color }}>{slot.name}</Text>
+      </Text>
+      <Animated.View key={nu.step.id} entering={FadeIn.duration(260)}>
+        <Text style={styles.name}>{nu.step.name}</Text>
+        {nu.step.product || nu.step.note ? (
+          <T variant="sub" numberOfLines={2}>
+            {[nu.step.product, nu.step.note].filter(Boolean).join(' · ')}
+          </T>
+        ) : null}
+      </Animated.View>
+      <SlideToConfirm
+        label="Slide to mark done"
+        onConfirm={() => s.tick(k, nu.step.id)}
+        style={{ marginTop: 14 }}
+      />
     </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  top: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
-  next: { flexDirection: 'row', gap: 12, marginTop: 10, marginBottom: 12 },
-  dot: { width: 10, height: 10, borderRadius: 5, marginTop: 5 },
-  name: { ...font.semibold, fontSize: 20, lineHeight: 25, color: colors.text, letterSpacing: -0.2 },
-  minis: { flexDirection: 'row', gap: 10, marginTop: 14 },
-  mini: { flex: 1, gap: 3 },
-  miniNum: { ...font.semibold, fontSize: 15, color: colors.text, fontVariant: ['tabular-nums'] },
+  label: {
+    ...font.semibold,
+    fontSize: 12,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    color: colors.muted,
+  },
+  name: { ...font.semibold, fontSize: 24, lineHeight: 29, letterSpacing: -0.5, color: colors.text, marginTop: 4 },
 });

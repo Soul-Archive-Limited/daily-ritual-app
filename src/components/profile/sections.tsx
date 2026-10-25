@@ -1,4 +1,5 @@
 import { File, Paths } from 'expo-file-system';
+import { router } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useState, type ReactNode } from 'react';
@@ -9,7 +10,7 @@ import { Button, Card, T } from '@/components/ui';
 import { useStore } from '@/data/store';
 import { importExport, type ExportFile } from '@/db/import';
 import { pickBackup } from '@/db/backup';
-import { exportAll } from '@/db/repo';
+import { exportAll, setKv } from '@/db/repo';
 import type { Config } from '@/db/types';
 import { todayKey } from '@/logic/dates';
 import { bmiOf } from '@/logic/progress';
@@ -158,9 +159,25 @@ function Explainer({ title, children }: { title: string; children: ReactNode }) 
 
 export function AboutCard() {
   const s = useStore()!;
+  const db = useSQLiteContext();
   const essentials = s.steps.filter((x) => x.essential && !x.paused).length;
   return (
     <Card style={{ paddingVertical: 8 }}>
+      <Pressable
+        accessibilityRole="button"
+        onPress={async () => {
+          await setKv(db, 'tutorial', 'pending');
+          router.dismissTo('/');
+        }}
+        style={styles.tour}>
+        <Text style={styles.tourText}>Replay the tour</Text>
+        <Icon name="sparkles" size={15} color={colors.rose} />
+      </Pressable>
+      <Explainer title="Rewards and XP">
+        Every step earns 10 XP (water counts in part). A finished ritual adds 20, a perfect day 30, and each of the
+        three daily quests 20 more. XP fills your level, from Seed to Celestial, and badges unlock along the way. The
+        Glow league puts this week against your last four, so the only person you race is you.
+      </Explainer>
       <Explainer title="Travel days">
         For long-haul days only (a 12+ hour flight or train). Pick “Travel day” under Type of day on Today and only your
         essentials count ({essentials} steps). Moving cities doesn’t need it: time zone and reminders follow your phone
@@ -263,6 +280,15 @@ function Labeled({ label, children }: { label: string; children: ReactNode }) {
 }
 
 const styles = StyleSheet.create({
+  tour: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minHeight: minTouch,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.line2,
+  },
+  tourText: { ...font.semibold, fontSize: 16, color: colors.text },
   two: { flexDirection: 'row', gap: 10 },
   input: {
     minHeight: minTouch,

@@ -1,39 +1,38 @@
-// Apple-style design tokens: iOS system colours for surfaces and text, light and dark.
-// Every accent colour means one thing (morning, night, health, skin, body, progress, attention); each has a light-mode
-// shade with enough contrast on white and a dark-mode shade for black.
+// Design tokens: pearl and ink surfaces, the aura gradient, and one colour per meaning, in light and dark.
+// Every accent means one thing (morning, night, health, skin, body, done/progress, attention); each has a light-mode
+// shade with enough contrast on white and a dark-mode shade for near-black.
 import { DynamicColorIOS, useColorScheme, type ColorValue, type TextStyle } from 'react-native';
 
 const dark = {
-  /** systemGroupedBackground */
-  bg: '#000000',
-  bg2: '#1C1C1E',
-  /** secondarySystemGroupedBackground */
-  card: '#1C1C1E',
-  /** tertiarySystemGroupedBackground */
-  card2: '#2C2C2E',
-  /** tertiarySystemFill */
-  fill: 'rgba(118,118,128,0.24)',
+  /** Page background (with the dot grid) */
+  bg: '#0E0E12',
+  bg2: '#17171C',
+  /** Cards */
+  card: '#1A1A20',
+  card2: '#24242B',
+  fill: 'rgba(255,255,255,0.08)',
   /** Elevated surface (tooltips, popovers) */
-  solid: '#2C2C2E',
-  line: 'rgba(84,84,88,0.45)',
-  /** separator */
-  line2: 'rgba(84,84,88,0.65)',
-  /** Chart grid lines */
-  grid: 'rgba(235,235,245,0.10)',
+  solid: '#24242B',
+  line: 'rgba(255,255,255,0.07)',
+  line2: 'rgba(255,255,255,0.14)',
+  /** Chart grid lines and the background dots */
+  grid: 'rgba(255,255,255,0.06)',
 
-  /** label */
-  text: '#FFFFFF',
-  /** secondaryLabel */
-  muted: 'rgba(235,235,245,0.6)',
-  /** systemGray: readable tertiary text */
-  dim: '#8E8E93',
+  text: '#F3F3F6',
+  muted: 'rgba(243,243,246,0.62)',
+  /** Readable tertiary text */
+  dim: '#8E8E9A',
 
-  /** Overall progress and primary buttons */
-  sage: '#63D2A5',
-  sageLight: '#A8E8CD',
-  /** Text on a sage button */
-  sageInk: '#04261A',
-  sageSoft: 'rgba(99,210,165,0.18)',
+  /** Primary buttons and dark chips: ink on pearl, pearl on ink */
+  ink: '#F3F3F6',
+  onInk: '#121214',
+
+  /** Done and overall progress (the glossy green "done" pills) */
+  sage: '#5FD39A',
+  sageLight: '#9BE8BF',
+  /** Text on a done-green surface */
+  sageInk: '#05281A',
+  sageSoft: 'rgba(95,211,154,0.16)',
 
   /** Needs attention */
   gold: '#F2C14E',
@@ -41,65 +40,77 @@ const dark = {
   /** Nearly empty */
   empty: '#FF8A7A',
 
-  morning: '#F0BE7E',
-  morningLight: '#F7DAB2',
-  night: '#A9A6F5',
-  nightLight: '#D3D1FA',
-  health: '#7CC4F2',
-  healthLight: '#BEE1F8',
-  skin: '#F2A49B',
-  skinLight: '#F8CFC9',
-  body: '#A3B6DC',
-  bodyLight: '#D0DBF0',
-  activity: '#8AD5DD',
+  /** Aura gradient stops (rewards, glow, celebrations) */
+  apricot: '#FFB27A',
+  rose: '#F477AE',
+  orchid: '#A88BF6',
+
+  morning: '#FFA472',
+  morningLight: '#FFC9A6',
+  night: '#8F8CFA',
+  nightLight: '#C2C0FC',
+  health: '#5CC9E3',
+  healthLight: '#A6E2F0',
+  skin: '#F58DB8',
+  skinLight: '#F9C2D9',
+  body: '#B19AF7',
+  bodyLight: '#D5C9FB',
+  activity: '#5CD1B8',
   /** Bag-only products */
-  extra: '#C7C1B3',
+  extra: '#B9B4C4',
   /** Soft tints for chips, pressed states and highlights */
-  morningSoft: 'rgba(240,190,126,0.14)',
-  healthSoft: 'rgba(124,196,242,0.16)',
-  skinSoft: 'rgba(242,164,155,0.2)',
+  morningSoft: 'rgba(255,164,114,0.15)',
+  healthSoft: 'rgba(92,201,227,0.16)',
+  skinSoft: 'rgba(245,141,184,0.18)',
   emptySoft: 'rgba(255,138,122,0.3)',
 };
 
 const light: typeof dark = {
-  bg: '#F2F2F7',
-  bg2: '#E5E5EA',
+  bg: '#F1F1F4',
+  bg2: '#E6E6EB',
   card: '#FFFFFF',
-  card2: '#F2F2F7',
-  fill: 'rgba(118,118,128,0.12)',
+  card2: '#F4F4F7',
+  fill: 'rgba(18,18,20,0.06)',
   solid: '#FFFFFF',
-  line: 'rgba(60,60,67,0.12)',
-  line2: 'rgba(60,60,67,0.29)',
-  grid: 'rgba(60,60,67,0.10)',
+  line: 'rgba(18,18,20,0.07)',
+  line2: 'rgba(18,18,20,0.14)',
+  grid: 'rgba(18,18,20,0.07)',
 
-  text: '#000000',
-  muted: 'rgba(60,60,67,0.6)',
-  dim: '#8A8A8E',
+  text: '#121214',
+  muted: 'rgba(18,18,20,0.58)',
+  dim: '#7D7D88',
 
-  sage: '#1F9D6E',
-  sageLight: '#3DB887',
+  ink: '#121214',
+  onInk: '#FFFFFF',
+
+  sage: '#2E9E66',
+  sageLight: '#46B37A',
   sageInk: '#FFFFFF',
-  sageSoft: 'rgba(31,157,110,0.12)',
+  sageSoft: 'rgba(46,158,102,0.12)',
 
   gold: '#B57A00',
   goldSoft: 'rgba(181,122,0,0.12)',
   empty: '#D9452F',
 
-  morning: '#C4852F',
-  morningLight: '#E0A552',
-  night: '#5E58D6',
-  nightLight: '#837EE6',
-  health: '#1F84C9',
-  healthLight: '#4FA3DC',
-  skin: '#D0625A',
-  skinLight: '#E3877F',
-  body: '#4F6699',
-  bodyLight: '#7489B8',
-  activity: '#1E9AA6',
-  extra: '#8C8577',
-  morningSoft: 'rgba(196,133,47,0.12)',
-  healthSoft: 'rgba(31,132,201,0.12)',
-  skinSoft: 'rgba(208,98,90,0.14)',
+  apricot: '#FFB27A',
+  rose: '#F06FA5',
+  orchid: '#9B7BF2',
+
+  morning: '#E2733A',
+  morningLight: '#FF9F6B',
+  night: '#6D6AF2',
+  nightLight: '#8A8CF7',
+  health: '#1F9CBF',
+  healthLight: '#3FB8D6',
+  skin: '#D9548E',
+  skinLight: '#F06FA5',
+  body: '#7E5FE0',
+  bodyLight: '#9B7BF2',
+  activity: '#1E9C86',
+  extra: '#8D879A',
+  morningSoft: 'rgba(226,115,58,0.12)',
+  healthSoft: 'rgba(31,156,191,0.12)',
+  skinSoft: 'rgba(217,84,142,0.12)',
   emptySoft: 'rgba(217,69,47,0.3)',
 };
 
@@ -124,26 +135,51 @@ export const onPhoto = {
   chip: 'rgba(0,0,0,0.35)',
   line: 'rgba(255,255,255,0.22)',
   /** Highlighted words on a photo */
-  accent: '#A8E8CD',
+  accent: '#FFD9E8',
 } as const;
 
-export const radius = { card: 24, small: 14, pill: 999 } as const;
+export const radius = { card: 30, small: 20, pill: 999 } as const;
+
+/** The aura gradient: apricot to rose to orchid. Same in both modes. */
+export const AURA = ['#FFB27A', '#F06FA5', '#9B7BF2'] as const;
+/** The night card gradient */
+export const NIGHT = ['#8A8CF7', '#5F5FF0'] as const;
+/** Glossy green for done: light top, deeper bottom */
+export const DEW = ['#8BE3AE', '#46B37A'] as const;
 
 export const space = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 28, gutter: 16 } as const;
 
-/** SF Pro, the system font, by weight. Spread into a style: `{ ...font.semibold, fontSize: 15 }`. */
+/** Font files loaded at start (see `src/app/_layout.tsx`). */
+export const FONT_FILES = {
+  Urbanist_200ExtraLight: require('@/assets/fonts/Urbanist_200ExtraLight.ttf'),
+  Urbanist_300Light: require('@/assets/fonts/Urbanist_300Light.ttf'),
+  Urbanist_400Regular: require('@/assets/fonts/Urbanist_400Regular.ttf'),
+  Urbanist_500Medium: require('@/assets/fonts/Urbanist_500Medium.ttf'),
+  Urbanist_600SemiBold: require('@/assets/fonts/Urbanist_600SemiBold.ttf'),
+  Urbanist_700Bold: require('@/assets/fonts/Urbanist_700Bold.ttf'),
+  Urbanist_800ExtraBold: require('@/assets/fonts/Urbanist_800ExtraBold.ttf'),
+  InstrumentSerif_400Regular: require('@/assets/fonts/InstrumentSerif_400Regular.ttf'),
+  InstrumentSerif_400Regular_Italic: require('@/assets/fonts/InstrumentSerif_400Regular_Italic.ttf'),
+};
+
+/** Urbanist by weight, Instrument Serif for editorial moments. Spread into a style: `{ ...font.semibold, fontSize: 15 }`. */
 export const font = {
-  light: { fontWeight: '300' },
-  regular: { fontWeight: '400' },
-  medium: { fontWeight: '500' },
-  semibold: { fontWeight: '600' },
-  bold: { fontWeight: '700' },
+  /** Huge thin numbers and the thin half of headlines */
+  thin: { fontFamily: 'Urbanist_200ExtraLight' },
+  light: { fontFamily: 'Urbanist_300Light' },
+  regular: { fontFamily: 'Urbanist_400Regular' },
+  medium: { fontFamily: 'Urbanist_500Medium' },
+  semibold: { fontFamily: 'Urbanist_600SemiBold' },
+  bold: { fontFamily: 'Urbanist_700Bold' },
+  heavy: { fontFamily: 'Urbanist_800ExtraBold' },
+  serif: { fontFamily: 'InstrumentSerif_400Regular' },
+  serifItalic: { fontFamily: 'InstrumentSerif_400Regular_Italic' },
   /** Numbers that line up (axes, times, tables) */
-  mono: { fontWeight: '400', fontVariant: ['tabular-nums'] },
-  monoMedium: { fontWeight: '500', fontVariant: ['tabular-nums'] },
+  mono: { fontFamily: 'Urbanist_500Medium', fontVariant: ['tabular-nums'] },
+  monoMedium: { fontFamily: 'Urbanist_600SemiBold', fontVariant: ['tabular-nums'] },
 } satisfies Record<string, TextStyle>;
 
-export const motion = { max: 400, ease: [0.2, 0.8, 0.2, 1] as const } as const;
+export const motion = { max: 400, ease: [0.2, 0.8, 0.2, 1] as const, spring: { damping: 18, stiffness: 180 } } as const;
 
 export const minTouch = 44;
 

@@ -3,78 +3,11 @@ import type { ReactNode } from 'react';
 import { COMPANY, CONTACT_EMAIL } from './config';
 import { Link } from './router';
 
-const FEATURES: [string, string, string][] = [
-  ['✓', 'Morning, night and health', 'Tick each step and see how far you are. A day counts at 80%, and streaks earn shields for the odd miss.'],
-  ['☀︎', 'Sun where you are', 'Today’s UV, sunrise and sunset wherever you travel, and a nudge to reapply sunscreen.'],
-  ['◐', 'Skin over time', 'A quick check-in every few days with a camera guide. Photos stay on your phone, always.'],
-  ['▮', 'Know what’s running out', 'Each bottle empties a little every time you use it, so restocking is never a surprise.'],
-  ['✦', 'Private AI, on your device', 'Ask about your routine or get a weekly review from Apple Intelligence. Nothing is sent anywhere.'],
-  ['⇆', 'iPhone, iPad and the web', 'Optional sign-in with Apple or Google keeps everything in step. Works fully without an account.'],
-];
-
-export function Landing() {
-  return (
-    <>
-      <div className="wrap">
-        <section className="hero">
-          <div>
-            <h1>Your daily ritual, one calm step at a time.</h1>
-            <p>A skin, hair and health routine tracker for iPhone and iPad. Free, private and open source.</p>
-            <div className="actions">
-              <Link className="btn" to="/app">
-                Open the web app
-              </Link>
-              <a className="btn line" href="#features">
-                What it does
-              </a>
-            </div>
-          </div>
-        </section>
-      </div>
-      <div className="wrap section" id="features">
-        <h2>Everything your routine needs, nothing it doesn’t.</h2>
-        <div className="grid">
-          {FEATURES.map(([ic, title, text]) => (
-            <div key={title} className="card feature">
-              <div className="ic">{ic}</div>
-              <h3>{title}</h3>
-              <p className="muted">{text}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-      <div className="wrap section">
-        <h2>Private by design.</h2>
-        <div className="grid">
-          <div className="card">
-            <h3>No account needed</h3>
-            <p className="muted" style={{ marginTop: 6 }}>
-              Everything lives on your device. Signing in is optional and only used to sync your routine and log.
-            </p>
-          </div>
-          <div className="card">
-            <h3>No ads, no tracking</h3>
-            <p className="muted" style={{ marginTop: 6 }}>
-              No analytics, no third-party trackers, nothing sold. The code is public, so you can check.
-            </p>
-          </div>
-          <div className="card">
-            <h3>Your photos stay yours</h3>
-            <p className="muted" style={{ marginTop: 6 }}>
-              Skin check-in photos never leave your phone, even when you sync.
-            </p>
-          </div>
-        </div>
-      </div>
-      <Footer />
-    </>
-  );
-}
-
 export function Footer() {
   return (
     <footer className="foot">
       <div className="wrap">
+        <span className="brand">Daily Ritual</span>
         <span>
           © {new Date().getFullYear()} {COMPANY}
         </span>
@@ -103,9 +36,9 @@ export function Privacy() {
 
       <h2>The short version</h2>
       <p>
-        Daily Ritual is made by {COMPANY}. It works without an account and keeps your data on your device. If you
-        choose to sign in, we store a copy of your routine and log so it can sync between your devices and this
-        website. We do not sell data, show ads or use analytics or tracking.
+        Daily Ritual is made by {COMPANY}. It works without an account and keeps your data on your device. If you choose
+        to sign in, we store a copy of your routine and log so it can sync between your devices and this website. We do
+        not sell data, show ads or use analytics or tracking.
       </p>
 
       <h2>What stays on your device</h2>
@@ -120,10 +53,12 @@ export function Privacy() {
 
       <h2>What we store if you sign in</h2>
       <ul>
-        <li>An account id, and the email address Apple or Google shares with us (Apple may give a private relay address).</li>
         <li>
-          Your settings, routine steps and products, daily log (ticks, water, activity), skin check-in scores and
-          notes (not photos), weigh-ins and weekly reviews.
+          An account id, and the email address Apple or Google shares with us (Apple may give a private relay address).
+        </li>
+        <li>
+          Your settings, routine steps and products, daily log (ticks, water, activity), skin check-in scores and notes
+          (not photos), weigh-ins and weekly reviews.
         </li>
       </ul>
       <p>
@@ -133,9 +68,7 @@ export function Privacy() {
 
       <h2>Services the app uses</h2>
       <ul>
-        <li>
-          Open-Meteo, for today’s UV and sun times. The app sends approximate coordinates, never who you are.
-        </li>
+        <li>Open-Meteo, for today’s UV and sun times. The app sends approximate coordinates, never who you are.</li>
         <li>
           Our server, to guess your city from your internet connection when location is turned off. The address is not
           stored.
@@ -145,8 +78,8 @@ export function Privacy() {
       <h2>Deleting your data</h2>
       <p>
         In the app, open Profile and tap Delete account. This permanently deletes your account and everything stored on
-        our server. Data on your device stays until you delete the app. You can also email us and we will delete it
-        for you.
+        our server. Data on your device stays until you delete the app. You can also email us and we will delete it for
+        you.
       </p>
 
       <h2>Children</h2>
@@ -183,8 +116,8 @@ export function Support() {
       </p>
       <h3 style={{ marginTop: 14 }}>Why don’t I see the AI features?</h3>
       <p className="muted">
-        They use Apple Intelligence on your device, which needs a supported iPhone or iPad with Apple Intelligence turned
-        on in Settings. Everything else works without it.
+        They use Apple Intelligence on your device, which needs a supported iPhone or iPad with Apple Intelligence
+        turned on in Settings. Everything else works without it.
       </p>
       <h3 style={{ marginTop: 14 }}>How do streaks work?</h3>
       <p className="muted">

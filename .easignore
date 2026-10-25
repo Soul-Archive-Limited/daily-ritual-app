@@ -45,6 +45,7 @@ example
 # handoff archive (duplicate of this folder)
 daily-ritual-app.zip
 
+# Not needed in builds
 server/
 build/
 web/

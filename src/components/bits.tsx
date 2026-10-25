@@ -100,12 +100,10 @@ const styles = StyleSheet.create({
   tile: {
     width: 42,
     height: 42,
-    borderRadius: 14,
+    borderRadius: 21,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.fill,
-    borderWidth: 1,
-    borderColor: colors.line,
   },
   center: { alignItems: 'center', justifyContent: 'center' },
   ringText: { ...font.semibold, fontSize: 14, color: colors.text, fontVariant: ['tabular-nums'] },

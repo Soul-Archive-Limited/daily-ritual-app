@@ -58,7 +58,7 @@ export default function Routine() {
       contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={styles.content}>
       <Animated.View entering={enter(0)}>
-        <Hero source={require('@/assets/images/hero/drop.webp')} height={250}>
+        <Hero height={250}>
           <Text style={styles.title}>{total} steps, three routines</Text>
           <T variant="sub" style={{ color: onPhoto.muted }}>
             Tap a step to edit it. Hold its number and drag to reorder. Today shows them in this order.

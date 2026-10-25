@@ -13,20 +13,22 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-import { colors, font, minTouch, onPhoto, radius, space } from '@/theme/tokens';
+import { colors, font, onPhoto, radius, space } from '@/theme/tokens';
 
-type Variant = 'body' | 'label' | 'sub' | 'h2' | 'title' | 'display' | 'big' | 'mono';
+type Variant = 'body' | 'label' | 'sub' | 'h2' | 'title' | 'display' | 'thin' | 'big' | 'mono' | 'eyebrow';
 
-/** Apple text styles: body 17, subheadline 15, footnote 13, headline 17 semibold, title2 22, large title 34. */
+/** Urbanist type scale: thin and bold headlines, big thin numbers, quiet labels. */
 const variants: Record<Variant, TextStyle> = {
-  body: { ...font.regular, fontSize: 17, lineHeight: 22, color: colors.text },
-  label: { ...font.regular, fontSize: 13, lineHeight: 18, color: colors.muted },
+  body: { ...font.regular, fontSize: 17, lineHeight: 23, color: colors.text },
+  label: { ...font.medium, fontSize: 13, lineHeight: 18, color: colors.muted },
   sub: { ...font.regular, fontSize: 15, lineHeight: 20, color: colors.muted },
-  h2: { ...font.semibold, fontSize: 17, lineHeight: 22, color: colors.text },
-  title: { ...font.bold, fontSize: 22, lineHeight: 28, color: colors.text },
-  display: { ...font.bold, fontSize: 34, lineHeight: 41, color: colors.text },
-  big: { ...font.bold, fontSize: 44, lineHeight: 50, color: colors.text, fontVariant: ['tabular-nums'] },
+  h2: { ...font.semibold, fontSize: 18, lineHeight: 23, color: colors.text, letterSpacing: -0.2 },
+  title: { ...font.bold, fontSize: 24, lineHeight: 29, color: colors.text, letterSpacing: -0.4 },
+  display: { ...font.bold, fontSize: 40, lineHeight: 42, color: colors.text, letterSpacing: -1.4 },
+  thin: { ...font.thin, fontSize: 40, lineHeight: 42, color: colors.text, letterSpacing: -1.4 },
+  big: { ...font.thin, fontSize: 52, lineHeight: 56, color: colors.text, letterSpacing: -2, fontVariant: ['tabular-nums'] },
   mono: { ...font.mono, fontSize: 11, lineHeight: 13, color: colors.dim },
+  eyebrow: { ...font.semibold, fontSize: 12, lineHeight: 16, color: colors.muted, letterSpacing: 0.8, textTransform: 'uppercase' },
 };
 
 export function T({ variant = 'body', style, ...rest }: TextProps & { variant?: Variant }) {
@@ -54,21 +56,27 @@ export function Pill({
 }: {
   children: ReactNode;
   /** onPhoto: a dark glassy chip readable over a photo in both modes */
-  tone?: 'plain' | 'on' | 'warn' | 'onPhoto';
+  /** chip: a white chip on the page background; ink: the dark chip */
+  tone?: 'plain' | 'on' | 'warn' | 'onPhoto' | 'ink' | 'chip';
   icon?: ReactNode;
 }) {
   const bg =
     tone === 'on'
       ? colors.sageSoft
+      : tone === 'ink'
+        ? colors.ink
       : tone === 'warn'
         ? colors.goldSoft
         : tone === 'onPhoto'
           ? onPhoto.chip
-          : colors.fill;
+          : tone === 'chip'
+            ? colors.card
+            : colors.fill;
   const fg =
-    tone === 'on' ? colors.sage : tone === 'warn' ? colors.gold : tone === 'onPhoto' ? onPhoto.text : colors.text;
+    tone === 'ink' ? colors.onInk : tone === 'on' ? colors.sage : tone === 'warn' ? colors.gold : tone === 'onPhoto' ? onPhoto.text : colors.text;
+  const lifted = tone === 'chip' || tone === 'ink';
   return (
-    <View style={[styles.pill, { backgroundColor: bg }]}>
+    <View style={[styles.pill, { backgroundColor: bg }, lifted && styles.lifted]}>
       {icon}
       <Text style={[styles.pillText, { color: fg }]}>{children}</Text>
     </View>
@@ -92,8 +100,8 @@ export function Button({
   disabled?: boolean;
   style?: StyleProp<ViewStyle>;
 }) {
-  const bg = kind === 'primary' ? colors.sage : kind === 'plain' ? colors.text : colors.fill;
-  const fg = kind === 'primary' ? colors.sageInk : kind === 'plain' ? colors.card : colors.sage;
+  const bg = kind === 'primary' ? colors.ink : kind === 'plain' ? colors.card : colors.fill;
+  const fg = kind === 'primary' ? colors.onInk : colors.text;
   return (
     <Pressable
       accessibilityRole="button"
@@ -155,21 +163,23 @@ export function Seg<V extends string | number>({
 const styles = StyleSheet.create({
   seg: { alignSelf: 'stretch', width: '100%', maxWidth: 560, minHeight: 32 },
   card: {
-    padding: space.lg,
+    padding: space.lg + 2,
     backgroundColor: colors.card,
     overflow: 'hidden',
+    boxShadow: '0 18px 40px -26px rgba(20,20,40,0.35)',
   },
   pill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: 11,
-    paddingVertical: 5,
+    paddingHorizontal: 13,
+    paddingVertical: 8,
     borderRadius: radius.pill,
   },
+  lifted: { boxShadow: '0 4px 14px -8px rgba(0,0,0,0.18)' },
   pillText: { ...font.semibold, fontSize: 13 },
   btn: {
-    minHeight: minTouch,
+    minHeight: 52,
     paddingHorizontal: 18,
     borderRadius: radius.pill,
     alignItems: 'center',
@@ -178,5 +188,5 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   btnSmall: { minHeight: 36, paddingHorizontal: 14 },
-  btnText: { ...font.semibold, fontSize: 17 },
+  btnText: { ...font.semibold, fontSize: 16.5 },
 });

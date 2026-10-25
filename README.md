@@ -55,7 +55,7 @@ Data lives on the device. Signing in is optional and only syncs the routine, log
 
 ## Credits
 
-Hero photos are from [Unsplash](https://unsplash.com) under the [Unsplash License](https://unsplash.com/license).
+Fonts: [Urbanist](https://fonts.google.com/specimen/Urbanist) and [Instrument Serif](https://fonts.google.com/specimen/Instrument+Serif), both under the SIL Open Font License.
 
 ## Licence
 

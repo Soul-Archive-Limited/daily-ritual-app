@@ -1,5 +1,5 @@
 // Starter routines for first-run setup. Generic step names, no products: people add their own.
-import type { Step } from '@/db/types';
+import type { SkinType, Step } from '@/db/types';
 
 type Seed = Omit<Step, 'id' | 'product'> & { product?: string };
 
@@ -119,10 +119,29 @@ export const STARTERS: { id: StarterId; name: string; blurb: string; steps: Seed
   },
 ];
 
-/** Fresh step list with new ids. */
-export const starterSteps = (id: StarterId): Step[] =>
+/** How-to notes tuned to the skin type picked in setup. */
+const SKIN_NOTES: Record<SkinType, Partial<Record<string, string>>> = {
+  dry: {
+    Moisturiser: 'A richer cream, on slightly damp skin',
+    'Face exfoliant': 'Once or twice a week at most; skip if tight',
+  },
+  oily: { Moisturiser: 'A light gel moisturiser, still every day' },
+  sensitive: {
+    Moisturiser: 'Fragrance-free; patch-test anything new',
+    'Face exfoliant': 'Gentle (PHA or lactic); skip if it stings',
+    'Vitamin C serum': 'Start every other day',
+  },
+  combination: {},
+};
+
+/** Fresh step list with new ids, notes tuned to the skin type. */
+export const starterSteps = (id: StarterId, skin?: SkinType): Step[] =>
   STARTERS.find((x) => x.id === id)!.steps.map((x) => ({
     ...x,
+    note: (skin && SKIN_NOTES[skin][x.name]) || x.note,
     product: x.product ?? '',
     id: 's' + Math.random().toString(36).slice(2, 9),
   }));
+
+/** Rough minutes for a list of steps, for the plan reveal. */
+export const minutesFor = (n: number) => Math.max(2, Math.round(n * 0.9));

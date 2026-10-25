@@ -24,11 +24,13 @@ type Props = {
   future: boolean;
   folded: boolean;
   onToggle: () => void;
+  /** Without its own header: Today shows the routine's card above it instead */
+  bare?: boolean;
   children?: React.ReactNode;
 };
 
 /** One routine (Morning / Night / Health) as a checklist card that folds to its header. */
-export function SlotSection({ k, slotId, info, future, folded, onToggle }: Props) {
+export function SlotSection({ k, slotId, info, future, folded, onToggle, bare }: Props) {
   const s = useStore()!;
   const shelf = useShelf();
   const lowPct = (st: DayStep) => {
@@ -63,36 +65,40 @@ export function SlotSection({ k, slotId, info, future, folded, onToggle }: Props
   return (
     <View>
       <Card>
-        <Pressable
-          onPress={() => {
-            Haptics.selectionAsync();
-            onToggle();
-          }}
-          accessibilityRole="button"
-          accessibilityState={{ expanded: !folded }}
-          accessibilityLabel={`${sl.name}, ${subtitle}, ${z.d} of ${z.n} done`}
-          style={styles.head}>
-          <IconTile name={SLOT_ICONS[slotId]} color={sl.color} />
-          <View style={{ flex: 1 }}>
-            <T variant="h2">{sl.name}</T>
-            <T variant="sub">{subtitle}</T>
-          </View>
-          <View style={styles.cnt}>
-            <CountUp value={z.d} style={styles.cntBig} />
-            <Text style={styles.cntOf}> / {z.n}</Text>
-          </View>
-          <View style={[styles.fold, !folded && { transform: [{ rotate: '180deg' }] }]}>
-            <Icon name="chevron.down" size={13} color={colors.muted} />
-          </View>
-        </Pressable>
+        {bare ? null : (
+          <Pressable
+            onPress={() => {
+              Haptics.selectionAsync();
+              onToggle();
+            }}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: !folded }}
+            accessibilityLabel={`${sl.name}, ${subtitle}, ${z.d} of ${z.n} done`}
+            style={styles.head}>
+            <IconTile name={SLOT_ICONS[slotId]} color={sl.color} />
+            <View style={{ flex: 1 }}>
+              <T variant="h2">{sl.name}</T>
+              <T variant="sub">{subtitle}</T>
+            </View>
+            <View style={styles.cnt}>
+              <CountUp value={z.d} style={styles.cntBig} />
+              <Text style={styles.cntOf}> / {z.n}</Text>
+            </View>
+            <View style={[styles.fold, !folded && { transform: [{ rotate: '180deg' }] }]}>
+              <Icon name="chevron.down" size={13} color={colors.muted} />
+            </View>
+          </Pressable>
+        )}
 
         {!folded ? (
           <Animated.View entering={FadeIn.duration(200)}>
-            <View style={styles.seg} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-              {Array.from({ length: z.n }).map((_, i) => (
-                <View key={i} style={[styles.segI, i < z.d && { backgroundColor: sl.color }]} />
-              ))}
-            </View>
+            {bare ? null : (
+              <View style={styles.seg} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+                {Array.from({ length: z.n }).map((_, i) => (
+                  <View key={i} style={[styles.segI, i < z.d && { backgroundColor: sl.color }]} />
+                ))}
+              </View>
+            )}
 
             {order.map((step, j) => (
               <View key={step.id}>

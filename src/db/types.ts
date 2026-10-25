@@ -45,7 +45,13 @@ export type Config = {
   notify?: { on: boolean };
   /** Nudge to reapply SPF during strong sun after sunscreen was ticked. */
   spfNudge?: boolean;
+  /** From setup: how the skin usually feels, and what they want from the routine */
+  skinType?: SkinType;
+  goals?: Goal[];
 };
+
+export type SkinType = 'dry' | 'combination' | 'oily' | 'sensitive';
+export type Goal = 'glow' | 'clear' | 'hydration' | 'hair' | 'habit';
 
 /** Snapshot of a step definition stored with each day (web: defs). */
 export type StepDef = { n: string; s: SlotId; p?: string; t?: 'water'; g?: number };

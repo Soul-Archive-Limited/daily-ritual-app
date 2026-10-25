@@ -7,6 +7,8 @@ import { parseKey, todayKey } from '@/logic/dates';
 import { snapshotDay } from '@/logic/scoring';
 import type { ShelfRecord } from '@/logic/shelf';
 
+import { demoData } from './demo';
+
 type Kind = 'config' | 'step' | 'day' | 'shelf' | 'checkin' | 'weighin' | 'review';
 type Doc = { kind: Kind; id: string; updated_at: number; deleted: 0 | 1; body?: unknown };
 
@@ -104,6 +106,8 @@ function apply(data: Data, d: Doc): Data {
 
 type Store = {
   user: User | null;
+  /** Showing sample data from "Try the demo" */
+  demo: boolean;
   /** True until we know whether someone is signed in */
   checking: boolean;
   loading: boolean;
@@ -149,7 +153,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // "Try the demo": sample data in this tab only, never synced.
+  const demo = useRef(new URLSearchParams(location.search).has('demo'));
+
   useEffect(() => {
+    if (demo.current) {
+      setData(demoData());
+      setUser({ id: 'demo', email: null });
+      setChecking(false);
+      return;
+    }
     api<{ user: User }>('/me')
       .then((r) => setUser(r.user))
       .catch(() => setUser(null))
@@ -158,7 +171,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   // Load once signed in, then every minute and when the tab comes back.
   useEffect(() => {
-    if (!user) return;
+    if (!user || demo.current) return;
     void refresh();
     const id = setInterval(refresh, 60_000);
     const onFocus = () => document.visibilityState === 'visible' && void refresh();
@@ -170,6 +183,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, [user, refresh]);
 
   const push = useCallback(async (docs: Doc[]) => {
+    if (demo.current) return;
     try {
       await api('/sync', { method: 'POST', body: JSON.stringify({ docs }) });
     } catch {
@@ -197,6 +211,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const value: Store = {
     user,
+    demo: demo.current,
     checking,
     loading,
     error,
@@ -210,6 +225,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
       setUser(r.user);
     },
     signOut: async () => {
+      if (demo.current) {
+        location.href = '/';
+        return;
+      }
       await api('/signout', { method: 'POST' }).catch(() => {});
       cursor.current = 0;
       setData(EMPTY);

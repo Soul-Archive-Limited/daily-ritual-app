@@ -1,3 +1,4 @@
+import { useFonts } from 'expo-font';
 import { DarkTheme, DefaultTheme, ThemeProvider, Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { SQLiteProvider } from 'expo-sqlite';
@@ -15,7 +16,7 @@ import { setupNotificationHandler } from '@/notifications/schedule';
 import { SunProvider } from '@/sun/SunProvider';
 import { SyncProvider } from '@/sync/SyncProvider';
 import { useWidgetSync } from '@/widgets/useWidgetSync';
-import { colors, usePalette } from '@/theme/tokens';
+import { colors, FONT_FILES, usePalette } from '@/theme/tokens';
 
 SplashScreen.preventAutoHideAsync();
 setupNotificationHandler();
@@ -27,7 +28,7 @@ function useNavTheme() {
   const base = dark ? DarkTheme : DefaultTheme;
   return {
     ...base,
-    colors: { ...base.colors, background: p.bg, card: p.card, text: p.text, border: p.line2, primary: p.sage },
+    colors: { ...base.colors, background: p.bg, card: p.card, text: p.text, border: p.line2, primary: p.rose },
   };
 }
 
@@ -55,6 +56,7 @@ function Routes() {
         <Stack.Screen name="product/new" options={sheetOptions('Add a product', 0.6)} />
         <Stack.Screen name="checkin" options={{ presentation: 'modal' }} />
         <Stack.Screen name="place" options={sheetOptions('Location', 0.6)} />
+        <Stack.Screen name="celebrate" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
       </Stack.Protected>
       <Stack.Protected guard={needsSetup}>
         <Stack.Screen name="welcome" />
@@ -65,6 +67,9 @@ function Routes() {
 
 export default function RootLayout() {
   const theme = useNavTheme();
+  const [fontsLoaded, fontError] = useFonts(FONT_FILES);
+  // Keep the splash up until the fonts are in, so nothing flashes in the system font.
+  if (!fontsLoaded && !fontError) return null;
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.bg }}>
       <ThemeProvider value={theme}>

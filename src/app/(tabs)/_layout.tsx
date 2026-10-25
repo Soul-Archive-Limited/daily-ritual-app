@@ -5,7 +5,7 @@ import { colors } from '@/theme/tokens';
 /** Apple's own tab bar; on iPad it can turn into a sidebar. */
 export default function TabsLayout() {
   return (
-    <NativeTabs sidebarAdaptable tintColor={colors.sage}>
+    <NativeTabs sidebarAdaptable tintColor={colors.ink}>
       <NativeTabs.Trigger name="(today)">
         <NativeTabs.Trigger.Label>Today</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf={{ default: 'sun.horizon', selected: 'sun.horizon.fill' }} md="wb_twilight" />

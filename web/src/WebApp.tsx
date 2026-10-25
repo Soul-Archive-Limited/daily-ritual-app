@@ -3,11 +3,14 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Step } from '@/db/types';
 import { addDays, parseKey, todayKey } from '@/logic/dates';
 import { bmiOf, infoCache, overview, pct, rangeKeys } from '@/logic/progress';
-import { dayInfo, frac, MILES, slotPct, streakCalc } from '@/logic/scoring';
+import { greeting } from '@/logic/dates';
+import { rewardsFor, LEVELS } from '@/logic/rewards';
+import { currentSlot, dayInfo, frac, MILES, motive, nextUp, streakCalc } from '@/logic/scoring';
 import { products, shelfState, STATUS_LABEL } from '@/logic/shelf';
 
 import { APPLE_SERVICES_ID, GOOGLE_WEB_CLIENT_ID } from './config';
 import { useData } from './data';
+import { Icon, Lune, Medal, Orb, QuestRing, type LuneMood } from './glow';
 
 const SLOTS = [
   { id: 'am', name: 'Morning', color: 'var(--morning)' },
@@ -24,9 +27,10 @@ const RULE: Record<Step['on'], string> = {
   optional: 'Only if needed',
 };
 
-type Tab = 'today' | 'progress' | 'routine' | 'shelf' | 'body';
+type Tab = 'today' | 'rewards' | 'progress' | 'routine' | 'shelf' | 'body';
 const TABS: [Tab, string][] = [
   ['today', 'Today'],
+  ['rewards', 'Rewards'],
   ['progress', 'Progress'],
   ['routine', 'Routine'],
   ['shelf', 'Shelf'],
@@ -41,16 +45,29 @@ export function WebApp() {
   const c = s.data.config;
   return (
     <div className="wrap app">
-      <div className="row between">
+      <div className="row between app-head" style={{ alignItems: 'flex-end' }}>
         <div>
-          <div className="label">Signed in{s.user.email ? ` as ${s.user.email}` : ''}</div>
-          <h1 style={{ fontSize: 30 }}>{c?.name ? `Hi, ${c.name}` : 'Your ritual'}</h1>
+          <div className="label">
+            {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
+          </div>
+          <h1>
+            {greeting()},<b>{c?.name ? `${c.name}.` : 'there.'}</b>
+          </h1>
         </div>
-        <button className="btn line small" onClick={s.signOut}>
-          Sign out
+        <button className="btn ghost small" onClick={s.signOut} title={s.user.email ?? undefined}>
+          {s.demo ? 'Leave the demo' : 'Sign out'}
         </button>
       </div>
-      {s.error ? <div className="notice" style={{ marginTop: 12 }}>{s.error}</div> : null}
+      {s.demo ? (
+        <div className="notice" style={{ marginTop: 14 }}>
+          This is a demo with sample data. Changes stay in this tab. Get the app to start your own ritual.
+        </div>
+      ) : null}
+      {s.error ? (
+        <div className="notice" style={{ marginTop: 12 }}>
+          {s.error}
+        </div>
+      ) : null}
       {!c && !s.loading ? (
         <div className="card" style={{ marginTop: 18 }}>
           <h2>Nothing synced yet</h2>
@@ -63,12 +80,29 @@ export function WebApp() {
         <>
           <div className="tabs" role="tablist">
             {TABS.map(([t, label]) => (
-              <button key={t} role="tab" aria-selected={tab === t} className={tab === t ? 'on' : ''} onClick={() => setTab(t)}>
+              <button
+                key={t}
+                role="tab"
+                aria-selected={tab === t}
+                className={tab === t ? 'on' : ''}
+                onClick={() => setTab(t)}>
                 {label}
               </button>
             ))}
           </div>
-          {tab === 'today' ? <Today /> : tab === 'progress' ? <Progress /> : tab === 'routine' ? <Routine /> : tab === 'shelf' ? <Shelf /> : <Body />}
+          {tab === 'today' ? (
+            <Today />
+          ) : tab === 'rewards' ? (
+            <Rewards />
+          ) : tab === 'progress' ? (
+            <Progress />
+          ) : tab === 'routine' ? (
+            <Routine />
+          ) : tab === 'shelf' ? (
+            <Shelf />
+          ) : (
+            <Body />
+          )}
         </>
       ) : (
         <p className="muted" style={{ marginTop: 18 }}>
@@ -157,14 +191,16 @@ function SignIn() {
 
   return (
     <div className="wrap signin">
-      <img src="/icon.png" alt="" width={72} height={72} style={{ borderRadius: 18 }} />
-      <h1 style={{ fontSize: 30, marginTop: 14 }}>Sign in to Daily Ritual</h1>
+      <Lune mood="happy" size={110} id="signin" />
+      <h1>
+        Welcome <b>back.</b>
+      </h1>
       <p className="muted" style={{ marginTop: 8 }}>
         Use the same account you signed in with on your iPhone or iPad. Your routine and log appear here.
       </p>
       <div className="stack">
-        <button className="btn" style={{ width: 280, background: dark ? '#fff' : '#000', color: dark ? '#000' : '#fff' }} onClick={apple}>
-           Sign in with Apple
+        <button className="btn" style={{ width: 280 }} onClick={apple}>
+          Sign in with Apple
         </button>
         <div ref={google} />
         {err ? <p style={{ color: 'var(--empty)' }}>{err}</p> : null}
@@ -174,112 +210,197 @@ function SignIn() {
   );
 }
 
-function Ring({ p, size = 88 }: { p: number; size?: number }) {
-  const r = 36;
-  const c = 2 * Math.PI * r;
-  return (
-    <svg width={size} height={size} viewBox="0 0 88 88" role="img" aria-label={`${pct(p)}% done`}>
-      <circle cx="44" cy="44" r={r} fill="none" stroke="var(--fill)" strokeWidth="8" />
-      <circle
-        cx="44"
-        cy="44"
-        r={r}
-        fill="none"
-        stroke="var(--sage)"
-        strokeWidth="8"
-        strokeLinecap="round"
-        strokeDasharray={`${c * p} ${c}`}
-        transform="rotate(-90 44 44)"
-      />
-      <text x="44" y="50" textAnchor="middle" fontSize="18" fontWeight="700" fill="var(--text)">
-        {pct(p)}%
-      </text>
-    </svg>
-  );
+/** How Lune feels about today (same rules as the app). */
+function moodFor(p: number, streakCur: number, todayGood: boolean): LuneMood {
+  const h = new Date().getHours();
+  if (p >= 1) return 'cheer';
+  if (streakCur > 0 && !todayGood && h >= 18) return 'worried';
+  return 'happy';
 }
 
 function Today() {
   const s = useData();
-  const { config, steps, days } = s.data;
+  const { config, steps, days, checkins } = s.data;
   const t = todayKey();
   const [k, setK] = useState(t);
+  const [open, setOpen] = useState<'am' | 'pm' | 'health'>(currentSlot());
   const info = useMemo(() => dayInfo(k, config!, steps, days[k], t), [k, config, steps, days, t]);
   const streak = useMemo(() => streakCalc(config!, steps, days, t), [config, steps, days, t]);
+  const r = useMemo(
+    () =>
+      rewardsFor(
+        config!,
+        steps,
+        days,
+        checkins.map((x) => x.date),
+        t,
+      ),
+    [config, steps, days, checkins, t],
+  );
+  const dx = r.byDay[k] ?? r.today;
   const water = steps.find((x) => x.type === 'water');
+  const isToday = k === t;
   const label = parseKey(k).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+  const m = motive(isToday, parseKey(k).toLocaleDateString('en-GB', { weekday: 'long' }), info, streak);
+  const nu = isToday ? nextUp(info) : null;
+  const list = info.exp.filter((x) => x.slot === open && x.type !== 'water');
 
   return (
-    <div className="stack">
-      <div className="card row between">
+    <div className="today">
+      <div className="stack">
         <div className="row">
-          <button className="btn line small" aria-label="Previous day" onClick={() => setK(addDays(k, -1))} disabled={k <= config!.startedAt}>
+          <button
+            className="btn ghost small"
+            aria-label="Previous day"
+            onClick={() => setK(addDays(k, -1))}
+            disabled={k <= config!.startedAt}>
             ‹
           </button>
-          <div>
-            <div className="label">{k === t ? 'Today' : 'Past day'}</div>
-            <strong>{label}</strong>
-          </div>
-          <button className="btn line small" aria-label="Next day" onClick={() => setK(addDays(k, 1))} disabled={k >= t}>
+          <strong style={{ fontWeight: 500 }}>{isToday ? 'Today' : label}</strong>
+          <button
+            className="btn ghost small"
+            aria-label="Next day"
+            onClick={() => setK(addDays(k, 1))}
+            disabled={k >= t}>
             ›
           </button>
         </div>
         <div className="row">
-          {streak.cur ? <span className="pill on">🔥 {streak.cur}-day streak</span> : null}
-          {info.flags.shampoo ? <span className="pill">Wash day</span> : null}
-          {info.flags.travel ? <span className="pill">Travel day</span> : null}
-          <Ring p={info.p} />
+          {streak.cur ? (
+            <span className="chip ink">
+              <Icon name="flame" size={13} /> {streak.cur}-day glow
+            </span>
+          ) : null}
+          <span className="chip">
+            <Icon name="sparkles" size={13} /> {dx.total} / {dx.goal} XP
+          </span>
+          {info.flags.shampoo ? <span className="chip">Wash day</span> : null}
+          {info.flags.travel ? <span className="chip">Travel day</span> : null}
         </div>
-      </div>
-      <div className="grid">
-        {SLOTS.map((sl) => {
-          const list = info.exp.filter((x) => x.slot === sl.id && x.type !== 'water');
-          const z = info.slot[sl.id];
-          if (!z.n) return null;
-          return (
-            <div key={sl.id} className="card">
-              <div className="head">
-                <span className="dot" style={{ background: sl.color }} />
-                <h2>{sl.name}</h2>
-                <span className="muted">
-                  {z.d}/{z.n}
-                </span>
-              </div>
-              <div className="meter">
-                <i style={{ width: `${pct(slotPct(z))}%`, background: sl.color }} />
-              </div>
-              <ul className="steps">
-                {list.map((st) => {
-                  const done = !!info.done[st.id];
-                  return (
-                    <li
-                      key={st.id}
-                      className={`step ${done ? 'done' : ''}`}
-                      role="checkbox"
-                      aria-checked={done}
-                      tabIndex={0}
-                      onClick={() => s.tick(k, st.id)}
-                      onKeyDown={(e) => (e.key === ' ' || e.key === 'Enter') && (e.preventDefault(), s.tick(k, st.id))}>
-                      <span className="check" style={done ? { background: sl.color } : undefined}>
-                        {done ? '✓' : ''}
-                      </span>
-                      <span>
-                        <div className="name">{st.name}</div>
-                        {st.product ? <div className="sub">{st.product}</div> : null}
-                      </span>
-                    </li>
-                  );
-                })}
-              </ul>
+        <Orb p={info.p} label={isToday ? 'Today’s glow' : 'That day'} />
+        <div className="lune-says">
+          <Lune mood={moodFor(info.p, streak.cur, streak.todayGood)} size={54} id="says" />
+          <div>
+            <div className="who">LUNE</div>
+            <div>
+              {m.before}
+              {m.em ? <b>{m.em}</b> : null}
+              {m.after ?? ''}
             </div>
-          );
-        })}
-        {water && info.exp.some((x) => x.type === 'water') ? (
+          </div>
+        </div>
+        {nu ? (
           <div className="card">
-            <div className="head">
-              <span className="dot" style={{ background: 'var(--health)' }} />
-              <h2>Water</h2>
+            <div className="eyebrow">Up next · {SLOTS.find((x) => x.id === nu.slot)!.name}</div>
+            <h3 style={{ fontSize: 24, marginTop: 4 }}>{nu.step.name}</h3>
+            {nu.step.product ? <p className="muted">{nu.step.product}</p> : null}
+            <button
+              className="btn"
+              style={{ marginTop: 14, width: '100%', background: 'var(--aura)', color: '#fff' }}
+              onClick={() => s.tick(k, nu.step.id)}>
+              Mark done
+            </button>
+          </div>
+        ) : null}
+        {info.total ? (
+          <div className="card">
+            <div className="row between">
+              <h3>Daily quests</h3>
+              <span className="label">{dx.quests.filter((q) => q.done).length}/3</span>
             </div>
-            <div style={{ marginTop: 10 }}>
+            <div className="row" style={{ margin: '10px 0 4px', flexWrap: 'nowrap' }}>
+              <span style={{ fontWeight: 700, fontSize: 14 }}>
+                {dx.total}
+                <span className="muted" style={{ fontWeight: 500 }}>
+                  {' '}
+                  / {dx.goal} XP
+                </span>
+              </span>
+              <span className="goal">
+                <i style={{ width: `${Math.min(100, (dx.total / dx.goal) * 100)}%` }} />
+              </span>
+            </div>
+            {dx.quests.map((q) => (
+              <div key={q.id} className={`quest ${q.done ? 'done' : ''}`}>
+                <QuestRing p={q.p} />
+                <span className="t">{q.title}</span>
+                <span className="xp">+{q.xp} XP</span>
+              </div>
+            ))}
+          </div>
+        ) : null}
+      </div>
+
+      <div className="stack">
+        <div className="rituals" role="tablist">
+          {SLOTS.map((sl) => {
+            const z = info.slot[sl.id];
+            const full = z.n > 0 && z.d === z.n;
+            return (
+              <button
+                key={sl.id}
+                role="tab"
+                aria-selected={open === sl.id}
+                className={`ritual ${sl.id === 'pm' ? 'night' : ''} ${open === sl.id ? 'on' : ''}`}
+                onClick={() => setOpen(sl.id)}>
+                <div className="head">
+                  <span className="ic" style={{ color: sl.id === 'pm' ? '#fff' : sl.color }}>
+                    <Icon name={sl.id === 'am' ? 'sun' : sl.id === 'pm' ? 'moon' : 'drop'} />
+                  </span>
+                  {sl.name}
+                </div>
+                <div className="k">{!z.n ? 'Nothing today' : full ? 'All done' : `${z.n - z.d} still to do`}</div>
+                <div className="row between" style={{ alignItems: 'flex-end', flexWrap: 'nowrap' }}>
+                  <div className="n">
+                    {z.d}
+                    <small>/{z.n}</small>
+                  </div>
+                  {full ? (
+                    <span className="qdone" style={{ width: 30, height: 30 }}>
+                      <Icon name="check" size={14} />
+                    </span>
+                  ) : null}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="card">
+          <ul className="steps">
+            {list.map((st) => {
+              const done = !!info.done[st.id];
+              return (
+                <li
+                  key={st.id}
+                  className={`step ${done ? 'done' : ''}`}
+                  role="checkbox"
+                  aria-checked={done}
+                  tabIndex={0}
+                  onClick={() => s.tick(k, st.id)}
+                  onKeyDown={(e) => (e.key === ' ' || e.key === 'Enter') && (e.preventDefault(), s.tick(k, st.id))}>
+                  <span className="check">{done ? <Icon name="check" size={15} /> : null}</span>
+                  <span>
+                    <div className="name">{st.name}</div>
+                    {st.product || st.note ? (
+                      <div className="sub">{[st.product, st.note].filter(Boolean).join(' · ')}</div>
+                    ) : null}
+                  </span>
+                </li>
+              );
+            })}
+            {!list.length ? (
+              <li className="muted" style={{ padding: 12 }}>
+                Nothing in this ritual today.
+              </li>
+            ) : null}
+          </ul>
+        </div>
+
+        {water && open === 'health' && info.exp.some((x) => x.type === 'water') ? (
+          <div className="card">
+            <div className="eyebrow">Water</div>
+            <div style={{ marginTop: 8 }}>
               <span className="big">{(info.water / 1000).toFixed(1)}</span>
               <span className="unit"> of {((water.goal || 3000) / 1000).toFixed(1)} L</span>
             </div>
@@ -288,20 +409,124 @@ function Today() {
             </div>
             <div className="row" style={{ marginTop: 14 }}>
               {[200, 500, 1000].map((ml) => (
-                <button key={ml} className="btn line small" onClick={() => s.setWater(k, info.water + ml)}>
+                <button key={ml} className="btn ghost small" onClick={() => s.setWater(k, info.water + ml)}>
                   +{ml >= 1000 ? '1 L' : `${ml} ml`}
                 </button>
               ))}
-              <button className="btn line small" onClick={() => s.setWater(k, info.water - 200)} disabled={!info.water}>
+              <button
+                className="btn ghost small"
+                onClick={() => s.setWater(k, info.water - 200)}
+                disabled={!info.water}>
                 −200
               </button>
             </div>
           </div>
         ) : null}
+        {info.skipped.length ? (
+          <p className="label">Skipped this day: {info.skipped.map((x) => x.name).join(', ')}</p>
+        ) : null}
       </div>
-      {info.skipped.length ? (
-        <p className="label">Skipped this day: {info.skipped.map((x) => x.name).join(', ')}</p>
-      ) : null}
+    </div>
+  );
+}
+
+function Rewards() {
+  const { config, steps, days, checkins } = useData().data;
+  const t = todayKey();
+  const r = useMemo(
+    () =>
+      rewardsFor(
+        config!,
+        steps,
+        days,
+        checkins.map((x) => x.date),
+        t,
+      ),
+    [config, steps, days, checkins, t],
+  );
+  const R = 32;
+  const C = 2 * Math.PI * R;
+  const next = LEVELS[r.level.n] ?? `${r.level.name} +1`;
+  const you = r.league.find((w) => w.you)!;
+  const above = r.league.find((w) => w.rank === you.rank - 1);
+  return (
+    <div className="stack">
+      <div className="dark-card level">
+        <div className="lv">
+          <svg viewBox="0 0 74 74" width={74} height={74}>
+            <defs>
+              <linearGradient id="lvg" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stopColor="#FFB27A" />
+                <stop offset="0.55" stopColor="#F06FA5" />
+                <stop offset="1" stopColor="#9B7BF2" />
+              </linearGradient>
+            </defs>
+            <circle cx={37} cy={37} r={R} fill="none" stroke="rgba(128,128,128,0.25)" strokeWidth={5} />
+            <circle
+              cx={37}
+              cy={37}
+              r={R}
+              fill="none"
+              stroke="url(#lvg)"
+              strokeWidth={5}
+              strokeLinecap="round"
+              strokeDasharray={`${C * Math.max(0.02, r.level.p)} ${C}`}
+              transform="rotate(-90 37 37)"
+            />
+          </svg>
+          <b>{r.level.n}</b>
+        </div>
+        <div style={{ flex: 1 }}>
+          <h3 style={{ fontSize: 22 }}>
+            Level {r.level.n} · {r.level.name}
+          </h3>
+          <p className="muted">
+            {r.total.toLocaleString('en-GB')} XP · {r.level.to - r.total} to {next}
+          </p>
+          <div className="goal" style={{ marginTop: 10, maxWidth: 360 }}>
+            <i style={{ width: `${r.level.p * 100}%` }} />
+          </div>
+        </div>
+        <Lune mood="happy" size={70} id="lvl" />
+      </div>
+      <div className="grid">
+        <div className="card">
+          <h3>Glow league</h3>
+          <p className="muted">
+            {you.rank === 1
+              ? 'This week is your best of the last five. Keep it there.'
+              : above
+                ? `${above.xp - you.xp + 1} XP to pass ${above.label.toLowerCase()}.`
+                : 'You against your own past weeks.'}
+          </p>
+          <div className="league">
+            {r.league.map((w) => (
+              <div key={w.week} className={`lrow ${w.you ? 'you' : ''}`}>
+                <span className="rk">{w.rank}</span>
+                <b>{w.label}</b>
+                <span>{w.xp} XP</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="card">
+          <div className="row between">
+            <h3>Badges</h3>
+            <span className="label">
+              {r.badges.filter((b) => b.got).length} of {r.badges.length}
+            </span>
+          </div>
+          <div className="badges">
+            {r.badges.map((b) => (
+              <div key={b.id} className={b.got ? '' : 'off'} title={b.desc}>
+                <Medal badge={b} />
+                <b>{b.name}</b>
+                <small>{b.got ? b.desc : `${b.have}/${b.need}`}</small>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -385,7 +610,10 @@ function Progress() {
           <ul style={{ margin: '10px 0 0', paddingLeft: 20 }}>
             {o.top.map((m) => (
               <li key={m.step.id}>
-                <strong>{m.step.name}</strong> <span className="muted">missed {m.n} of {m.of}</span>
+                <strong>{m.step.name}</strong>{' '}
+                <span className="muted">
+                  missed {m.n} of {m.of}
+                </span>
               </li>
             ))}
           </ul>
@@ -421,7 +649,11 @@ function Routine() {
                     <span>
                       <div className="name">{x.name}</div>
                       <div className="sub">
-                        {[x.product, x.type === 'water' ? `${(x.goal || 3000) / 1000} L a day` : RULE[x.on], x.paused ? 'Paused' : '']
+                        {[
+                          x.product,
+                          x.type === 'water' ? `${(x.goal || 3000) / 1000} L a day` : RULE[x.on],
+                          x.paused ? 'Paused' : '',
+                        ]
                           .filter(Boolean)
                           .join(' · ')}
                       </div>
@@ -493,7 +725,9 @@ function Body() {
           <span className="unit"> kg</span>
         </div>
         <p className="muted" style={{ marginTop: 6 }}>
-          {last ? parseKey(last.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' }) : 'No weigh-ins yet.'}
+          {last
+            ? parseKey(last.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })
+            : 'No weigh-ins yet.'}
           {bmi ? ` · BMI ${bmi.toFixed(1)}` : ''}
         </p>
         <div className="row" style={{ marginTop: 14 }}>
@@ -527,7 +761,9 @@ function Body() {
             <tbody>
               {[...weighins].reverse().map((w) => (
                 <tr key={w.id}>
-                  <td>{parseKey(w.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' })}</td>
+                  <td>
+                    {parseKey(w.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' })}
+                  </td>
                   <td>{w.kg} kg</td>
                   {config!.heightCm ? <td>{bmiOf(w.kg, config!.heightCm)!.toFixed(1)}</td> : null}
                 </tr>
