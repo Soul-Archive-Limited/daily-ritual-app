@@ -48,7 +48,12 @@ export type Config = {
   /** From setup: how the skin usually feels, and what they want from the routine */
   skinType?: SkinType;
   goals?: Goal[];
+  /** What Lune wears and the orb's colours, picked from what levels have unlocked */
+  look?: { outfit?: LuneOutfit; orb?: OrbTheme };
 };
+
+export type LuneOutfit = 'none' | 'bow' | 'headband' | 'sunnies' | 'flowers' | 'scarf' | 'crown';
+export type OrbTheme = 'aura' | 'dawn' | 'ocean' | 'night' | 'gold' | 'pearl';
 
 export type SkinType = 'dry' | 'combination' | 'oily' | 'sensitive';
 export type Goal = 'glow' | 'clear' | 'hydration' | 'hair' | 'habit';

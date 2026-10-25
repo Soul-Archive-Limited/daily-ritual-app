@@ -13,7 +13,7 @@ import { slug } from '@/logic/shelf';
 import { colors, font, minTouch, SLOTS, type SlotId } from '@/theme/tokens';
 
 import { StepRow } from './StepRow';
-import { Water } from './Water';
+import { litres } from './Water';
 
 export const SLOT_ICONS: Record<SlotId, SFSymbol> = { am: 'sun.max', pm: 'moon', health: 'waveform.path.ecg' };
 
@@ -104,7 +104,25 @@ export function SlotSection({ k, slotId, info, future, folded, onToggle, bare }:
               <View key={step.id}>
                 {labels[j] ? <Text style={styles.grp}>{labels[j]}</Text> : null}
                 {step.type === 'water' ? (
-                  <Water k={k} step={step} ml={info.water} future={future} />
+                  // The water body has its own card on Today; here just the progress.
+                  <View
+                    style={styles.waterRow}
+                    accessible
+                    accessibilityLabel={`${step.name}: ${litres(info.water)} of ${litres(step.goal || 3000)} litres`}>
+                    <Icon name="drop.fill" size={14} color={colors.health} />
+                    <Text style={styles.waterName}>{step.name}</Text>
+                    <View style={styles.waterBar}>
+                      <View
+                        style={[
+                          styles.waterFill,
+                          { width: `${Math.min(100, (info.water / (step.goal || 3000)) * 100)}%` },
+                        ]}
+                      />
+                    </View>
+                    <Text style={styles.waterNum}>
+                      {litres(info.water)}/{litres(step.goal || 3000)} L
+                    </Text>
+                  </View>
                 ) : (
                   <StepRow
                     k={k}
@@ -172,6 +190,11 @@ export function SlotSection({ k, slotId, info, future, folded, onToggle, bare }:
 }
 
 const styles = StyleSheet.create({
+  waterRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 14, paddingHorizontal: 8 },
+  waterName: { ...font.semibold, fontSize: 16, color: colors.text },
+  waterBar: { flex: 1, height: 6, borderRadius: 3, backgroundColor: colors.fill, overflow: 'hidden' },
+  waterFill: { height: '100%', borderRadius: 3, backgroundColor: colors.health },
+  waterNum: { ...font.mono, fontSize: 12, color: colors.muted },
   head: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: minTouch },
   cnt: { flexDirection: 'row', alignItems: 'baseline' },
   cntBig: { ...font.light, fontSize: 30, color: colors.text, fontVariant: ['tabular-nums'] },

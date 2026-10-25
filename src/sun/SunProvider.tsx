@@ -77,7 +77,12 @@ export function SunProvider({ children }: { children: ReactNode }) {
     const tz = deviceTz();
     if (place?.manual && place.tz === tz) return place;
 
-    const p = await Location.getForegroundPermissionsAsync();
+    let p = await Location.getForegroundPermissionsAsync();
+    // Ask once, the first time the app opens without an answer, so the city and UV follow you from then on.
+    if (!p.granted && p.canAskAgain && !(await getKv<boolean>(db, 'locAsked'))) {
+      await setKv(db, 'locAsked', true);
+      p = await Location.requestForegroundPermissionsAsync();
+    }
     setPerm(p.granted ? 'granted' : p.canAskAgain ? 'undetermined' : 'denied');
     if (!p.granted) {
       // Manual city from another time zone: fall back to automatic, keeping the last known point.
@@ -86,8 +91,9 @@ export function SunProvider({ children }: { children: ReactNode }) {
         st.updateConfig({ place: next });
         return next;
       }
-      // No GPS: an approximate city from the internet connection, refreshed when the time zone changes.
-      if (!place?.lat || place.tz !== tz) {
+      // No GPS: an approximate city from the internet connection, refreshed when the time zone changes
+      // or every few hours (neighbouring countries often share a time zone).
+      if (!place?.lat || place.tz !== tz || Date.now() - (place.at ?? 0) > 4 * 36e5) {
         const g = await geoFromNetwork();
         if (g?.lat != null && g.lon != null) {
           const next: Place = {
@@ -118,7 +124,7 @@ export function SunProvider({ children }: { children: ReactNode }) {
     const next: Place = { name: name || place?.name || 'Here', country, ...here, tz, at: Date.now(), manual: false };
     st.updateConfig({ place: next });
     return next;
-  }, []);
+  }, [db]);
 
   /** Live UV for the place, cached for 3 hours; estimate when offline. */
   const loadSun = useCallback(

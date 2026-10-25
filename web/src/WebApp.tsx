@@ -10,7 +10,7 @@ import { products, shelfState, STATUS_LABEL } from '@/logic/shelf';
 
 import { APPLE_SERVICES_ID, GOOGLE_WEB_CLIENT_ID } from './config';
 import { useData } from './data';
-import { Icon, Lune, Medal, Orb, QuestRing, type LuneMood } from './glow';
+import { healthTint, Icon, Lune, Medal, Orb, QuestRing, WaterBody, type LuneMood } from './glow';
 
 const SLOTS = [
   { id: 'am', name: 'Morning', color: 'var(--morning)' },
@@ -397,28 +397,43 @@ function Today() {
           </ul>
         </div>
 
-        {water && open === 'health' && info.exp.some((x) => x.type === 'water') ? (
-          <div className="card">
-            <div className="eyebrow">Water</div>
-            <div style={{ marginTop: 8 }}>
-              <span className="big">{(info.water / 1000).toFixed(1)}</span>
-              <span className="unit"> of {((water.goal || 3000) / 1000).toFixed(1)} L</span>
-            </div>
-            <div className="meter">
-              <i style={{ width: `${pct(frac(water, days[k]))}%`, background: 'var(--health)' }} />
-            </div>
-            <div className="row" style={{ marginTop: 14 }}>
-              {[200, 500, 1000].map((ml) => (
-                <button key={ml} className="btn ghost small" onClick={() => s.setWater(k, info.water + ml)}>
-                  +{ml >= 1000 ? '1 L' : `${ml} ml`}
+        {water && info.exp.some((x) => x.type === 'water') ? (
+          <div className="card row" style={{ gap: 22, alignItems: 'center', flexWrap: 'nowrap' }}>
+            <WaterBody
+              p={frac(water, days[k])}
+              health={info.slot.health.n ? info.slot.health.f / info.slot.health.n : 0}
+              onTap={() => s.setWater(k, info.water + 250)}
+            />
+            <div style={{ flex: 1 }}>
+              <div className="eyebrow">Water</div>
+              <div style={{ marginTop: 6 }}>
+                <span className="big">{(info.water / 1000).toFixed(1)}</span>
+                <span className="unit"> of {((water.goal || 3000) / 1000).toFixed(1)} L</span>
+              </div>
+              <span className="chip" style={{ marginTop: 8 }}>
+                <span
+                  className="dot"
+                  style={{ background: healthTint(info.slot.health.n ? info.slot.health.f / info.slot.health.n : 0).b }}
+                />
+                {healthTint(info.slot.health.n ? info.slot.health.f / info.slot.health.n : 0).word} · Health{' '}
+                {pct(info.slot.health.n ? info.slot.health.f / info.slot.health.n : 0)}%
+              </span>
+              <div className="row" style={{ marginTop: 12 }}>
+                {[200, 500, 1000].map((ml) => (
+                  <button key={ml} className="btn ghost small" onClick={() => s.setWater(k, info.water + ml)}>
+                    +{ml >= 1000 ? '1 L' : `${ml} ml`}
+                  </button>
+                ))}
+                <button
+                  className="btn ghost small"
+                  onClick={() => s.setWater(k, info.water - 200)}
+                  disabled={!info.water}>
+                  −200
                 </button>
-              ))}
-              <button
-                className="btn ghost small"
-                onClick={() => s.setWater(k, info.water - 200)}
-                disabled={!info.water}>
-                −200
-              </button>
+              </div>
+              <p className="label" style={{ marginTop: 8 }}>
+                Tap the body for a glass.
+              </p>
             </div>
           </div>
         ) : null}

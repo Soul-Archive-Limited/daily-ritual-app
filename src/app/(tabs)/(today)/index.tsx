@@ -9,9 +9,7 @@ import { AuraOrb } from '@/components/glow/AuraOrb';
 import { useLayout } from '@/components/layout';
 import type { LuneMood } from '@/components/Lune';
 import { Screen } from '@/components/Screen';
-import { useOnDeviceAI } from '@/ai/coach';
 import { ActivityCard } from '@/components/today/ActivityCard';
-import { AskCard } from '@/components/today/AskCard';
 import { Coach, type CoachStep } from '@/components/today/Coach';
 import { DayBar } from '@/components/today/DayBar';
 import { LuneSays } from '@/components/today/LuneSays';
@@ -22,6 +20,7 @@ import { RitualCards } from '@/components/today/RitualCards';
 import { SlotSection } from '@/components/today/SlotSection';
 import { SunCard } from '@/components/today/SunCard';
 import { UpNext } from '@/components/today/UpNext';
+import { Water } from '@/components/today/Water';
 import { useCelebrations } from '@/components/today/useCelebrations';
 import { Button, Pill, T } from '@/components/ui';
 import { useStore } from '@/data/store';
@@ -62,11 +61,13 @@ export default function Today() {
   const s = useStore();
   const now = useClock();
   const { regular } = useLayout();
-  const ai = useOnDeviceAI();
   const t = todayKey();
   const [picked, setPicked] = useState<string | null>(null);
-  const [fold, setFold] = useState<Partial<Record<SlotId, boolean>>>({});
+  // One routine open at a time on a phone, so Today stays short. null = all folded.
+  const [open, setOpen] = useState<SlotId | null | undefined>(undefined);
   const rewards = useRewards();
+  const [bump, setBump] = useState(0);
+  const [seenDone, setSeenDone] = useState(-1);
   useCelebrations(rewards);
 
   // First-run tour, and "Replay the tour" from Profile.
@@ -97,7 +98,7 @@ export default function Today() {
   if (focus && focus.at !== seenFocus) {
     setSeenFocus(focus.at);
     setPicked(focus.day && focus.day < t ? focus.day : null);
-    setFold(focus.slot ? { am: focus.slot !== 'am', pm: focus.slot !== 'pm' } : {});
+    setOpen(focus.slot);
   }
 
   const streak = useMemo(() => (s ? streakCalc(s.config, s.steps, s.days, t) : null), [s, t]);
@@ -106,12 +107,21 @@ export default function Today() {
   if (!s || !info || !streak) return <View style={styles.screen} />;
   const { config } = s;
 
+  // Lune jumps for joy each time another step is done today.
+  const doneNow = isToday ? info.n : 0;
+  if (doneNow !== seenDone) {
+    if (seenDone >= 0 && doneNow > seenDone) setBump(bump + 1);
+    setSeenDone(doneNow);
+  }
+
   const weekday = parseKey(k).toLocaleDateString('en-GB', { weekday: 'long' });
   const m = motive(isToday, weekday, info, streak);
   const cur = currentSlot(now);
-  // The routine for this time of day and Health start open; the others fold away (tap a card to open).
-  const isOpen = (id: SlotId) => !(fold[id] ?? (isToday && id !== 'health' && id !== cur));
-  const toggle = (id: SlotId) => setFold((f) => ({ ...f, [id]: isOpen(id) }));
+  const openSlot = open === undefined ? (isToday ? cur : null) : open;
+  const isOpen = (id: SlotId) => openSlot === id;
+  const toggle = (id: SlotId) => setOpen(openSlot === id ? null : id);
+  const waterStep = info.exp.find((x) => x.type === 'water');
+  const health = info.slot.health.n ? info.slot.health.f / info.slot.health.n : 0;
   const dayXP = isToday ? rewards?.today : rewards?.byDay[k];
 
   const dateLine = parseKey(k).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -172,11 +182,17 @@ export default function Today() {
       </View>
       <Animated.View entering={enter(1)} style={styles.orb}>
         <View ref={orbRef} collapsable={false} style={{ alignSelf: 'center' }}>
-          <AuraOrb p={info.p} label={isToday ? 'Today’s glow' : 'That day'} />
+          <AuraOrb p={info.p} label={isToday ? 'Today’s glow' : 'That day'} theme={config.look?.orb} />
         </View>
       </Animated.View>
       <View ref={luneRef} collapsable={false}>
-        <LuneSays mood={luneMood(isToday, info, streak, now)} line={m} />
+        <LuneSays
+          mood={luneMood(isToday, info, streak, now)}
+          line={m}
+          react={bump}
+          outfit={config.look?.outfit}
+          onAsk={config.cards?.ask !== false ? () => router.push('/ask') : undefined}
+        />
       </View>
     </Animated.View>
   );
@@ -204,7 +220,6 @@ export default function Today() {
           <SunCard />
         </Animated.View>
       ) : null}
-      {isToday && ai && config.cards?.ask !== false ? <AskCard /> : null}
       {isToday && config.notify === undefined ? <RemindersCard /> : null}
     </>
   );
@@ -232,6 +247,11 @@ export default function Today() {
           />
         </Animated.View>
       ))}
+      {waterStep ? (
+        <Animated.View entering={enter(4)}>
+          <Water k={k} step={waterStep} ml={info.water} future={future} health={health} />
+        </Animated.View>
+      ) : null}
     </>
   );
 

@@ -2,7 +2,7 @@ import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import type { SFSymbol } from 'expo-symbols';
 import { useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View, type ScrollViewInstance } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View, type ScrollViewInstance } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { Icon, IconTile } from '@/components/bits';
@@ -26,6 +26,9 @@ export default function Routine() {
   const sectionY = useRef<Partial<Record<SlotId, number>>>({});
   const bodyY = useRef(0);
   const [dragging, setDragging] = useState(false);
+  // Each routine folds to its header so finding one step doesn't mean scrolling past all of them.
+  const [open, setOpen] = useState<Partial<Record<SlotId, boolean>>>({});
+  const [q, setQ] = useState('');
 
   if (!s) return <View style={styles.screen} />;
   const { config: c, steps } = s;
@@ -46,9 +49,12 @@ export default function Routine() {
   });
 
   const jump = (sl: SlotId) => {
+    setOpen((o) => ({ ...o, [sl]: true }));
     const y = sectionY.current[sl];
-    if (y != null) scroll.current?.scrollTo({ y: bodyY.current + y - 60, animated: true });
+    if (y != null) setTimeout(() => scroll.current?.scrollTo({ y: bodyY.current + y - 60, animated: true }), 60);
   };
+  const query = q.trim().toLowerCase();
+  const found = query ? steps.filter((x) => `${x.name} ${x.product} ${x.note}`.toLowerCase().includes(query)) : [];
 
   return (
     <ScrollView
@@ -61,7 +67,7 @@ export default function Routine() {
         <Hero height={250}>
           <Text style={styles.title}>{total} steps, three routines</Text>
           <T variant="sub" style={{ color: onPhoto.muted }}>
-            Tap a step to edit it. Hold its number and drag to reorder. Today shows them in this order.
+            Tap a routine to open it, then a step to edit it. Hold a step’s number and drag to reorder.
           </T>
           <View style={styles.counts}>
             {SLOTS.map((sl) => (
@@ -110,55 +116,114 @@ export default function Routine() {
           <RoutineCheckCard />
         </Animated.View>
 
-        {SLOTS.map((sl, si) => {
-          const list = steps.filter((x) => x.slot === sl.id);
-          const ids = list.map((x) => x.id);
-          return (
-            <Animated.View
-              key={sl.id}
-              entering={enter(3 + si)}
-              onLayout={(e) => (sectionY.current[sl.id] = e.nativeEvent.layout.y)}>
-              <Card>
-                <View style={styles.head}>
-                  <IconTile name={ICONS[sl.id]} color={sl.color} />
-                  <View style={{ flex: 1 }}>
-                    <T variant="h2">{sl.name}</T>
-                    <T variant="sub">
-                      {list.length} {list.length === 1 ? 'step' : 'steps'}
-                    </T>
-                  </View>
-                </View>
-                <ReorderList
-                  ids={ids}
-                  onDragging={setDragging}
-                  onReorder={(from, to) => {
-                    const next = [...ids];
-                    const [x] = next.splice(from, 1);
-                    next.splice(to, 0, x);
-                    s.reorderSlot(sl.id, next);
-                  }}
-                  renderRow={(id, i, handle) => {
-                    const step = list.find((x) => x.id === id)!;
-                    return <StepCard step={step} n={i + 1} accent={sl.color} last={false} handle={handle} />;
-                  }}
+        <View style={styles.search}>
+          <Icon name="magnifyingglass" size={15} color={colors.dim} />
+          <TextInput
+            value={q}
+            onChangeText={setQ}
+            placeholder="Find a step or product"
+            placeholderTextColor={colors.dim}
+            style={styles.searchInput}
+            clearButtonMode="while-editing"
+            returnKeyType="search"
+            accessibilityLabel="Find a step or product"
+          />
+        </View>
+
+        {query ? (
+          <Card>
+            <T variant="sub" style={{ marginBottom: 4 }}>
+              {found.length ? `${found.length} ${found.length === 1 ? 'match' : 'matches'}` : 'No step matches that.'}
+            </T>
+            {found.map((step, i) => {
+              const sl = SLOTS.find((z) => z.id === step.slot)!;
+              return (
+                <StepCard
+                  key={step.id}
+                  step={step}
+                  n={i + 1}
+                  accent={sl.color}
+                  last={i === found.length - 1}
+                  handle={(c) => c}
                 />
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={() => {
-                    Haptics.selectionAsync();
-                    const id = s.addStep(sl.id);
-                    router.push({ pathname: '/step/[id]', params: { id, isNew: '1' } });
-                  }}
-                  style={({ pressed }) => [styles.add, pressed && { backgroundColor: colors.fill }]}>
-                  <View style={styles.addDot}>
-                    <Icon name="plus" size={13} color={colors.muted} />
-                  </View>
-                  <T style={{ color: colors.muted }}>Add a {sl.name.toLowerCase()} step</T>
-                </Pressable>
-              </Card>
-            </Animated.View>
-          );
-        })}
+              );
+            })}
+          </Card>
+        ) : null}
+
+        {query
+          ? null
+          : SLOTS.map((sl, si) => {
+              const list = steps.filter((x) => x.slot === sl.id);
+              const isOpen = !!open[sl.id];
+              const preview =
+                list
+                  .slice(0, 4)
+                  .map((x) => x.name)
+                  .join(', ') + (list.length > 4 ? ` +${list.length - 4}` : '');
+              const ids = list.map((x) => x.id);
+              return (
+                <Animated.View
+                  key={sl.id}
+                  entering={enter(3 + si)}
+                  onLayout={(e) => (sectionY.current[sl.id] = e.nativeEvent.layout.y)}>
+                  <Card>
+                    <Pressable
+                      style={styles.head}
+                      onPress={() => {
+                        Haptics.selectionAsync();
+                        setOpen((o) => ({ ...o, [sl.id]: !isOpen }));
+                      }}
+                      accessibilityRole="button"
+                      accessibilityState={{ expanded: isOpen }}
+                      accessibilityLabel={`${sl.name}, ${list.length} steps`}>
+                      <IconTile name={ICONS[sl.id]} color={sl.color} />
+                      <View style={{ flex: 1 }}>
+                        <T variant="h2">{sl.name}</T>
+                        <T variant="sub" numberOfLines={isOpen ? 1 : 2}>
+                          {list.length} {list.length === 1 ? 'step' : 'steps'}
+                          {isOpen || !list.length ? '' : ` · ${preview}`}
+                        </T>
+                      </View>
+                      <View style={[styles.chev, isOpen && { transform: [{ rotate: '180deg' }] }]}>
+                        <Icon name="chevron.down" size={13} color={colors.muted} />
+                      </View>
+                    </Pressable>
+                    {isOpen ? (
+                      <>
+                        <ReorderList
+                          ids={ids}
+                          onDragging={setDragging}
+                          onReorder={(from, to) => {
+                            const next = [...ids];
+                            const [x] = next.splice(from, 1);
+                            next.splice(to, 0, x);
+                            s.reorderSlot(sl.id, next);
+                          }}
+                          renderRow={(id, i, handle) => {
+                            const step = list.find((x) => x.id === id)!;
+                            return <StepCard step={step} n={i + 1} accent={sl.color} last={false} handle={handle} />;
+                          }}
+                        />
+                        <Pressable
+                          accessibilityRole="button"
+                          onPress={() => {
+                            Haptics.selectionAsync();
+                            const id = s.addStep(sl.id);
+                            router.push({ pathname: '/step/[id]', params: { id, isNew: '1' } });
+                          }}
+                          style={({ pressed }) => [styles.add, pressed && { backgroundColor: colors.fill }]}>
+                          <View style={styles.addDot}>
+                            <Icon name="plus" size={13} color={colors.muted} />
+                          </View>
+                          <T style={{ color: colors.muted }}>Add a {sl.name.toLowerCase()} step</T>
+                        </Pressable>
+                      </>
+                    ) : null}
+                  </Card>
+                </Animated.View>
+              );
+            })}
 
         <Animated.View entering={enter(6)}>
           <ScheduleCard />
@@ -169,6 +234,24 @@ export default function Routine() {
 }
 
 const styles = StyleSheet.create({
+  search: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
+    minHeight: 48,
+    borderRadius: 24,
+    backgroundColor: colors.card,
+  },
+  searchInput: { flex: 1, ...font.regular, fontSize: 16, color: colors.text, minHeight: 48 },
+  chev: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.fill,
+  },
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { width: '100%', maxWidth: 760, alignSelf: 'center', paddingHorizontal: 16, paddingTop: 8, gap: 14 },
   title: { ...font.bold, fontSize: 28, lineHeight: 34, color: onPhoto.text },

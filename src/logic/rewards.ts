@@ -1,6 +1,6 @@
 // Rewards: XP, daily goal, levels, daily quests, a league against your own past weeks, and badges.
 // Everything is worked out from the log itself (no extra stored state), so it syncs and matches on the website.
-import type { Config, Day, Step } from '@/db/types';
+import type { Config, Day, LuneOutfit, OrbTheme, Step } from '@/db/types';
 import type { SlotId } from '@/theme/tokens';
 
 import { addDays, parseKey } from './dates';
@@ -51,7 +51,20 @@ export type Badge = {
   got: boolean;
 };
 
+export type Records = {
+  bestStreak: number;
+  perfectDays: number;
+  /** Most XP earned in one Monday-to-Sunday week */
+  bestWeek: number;
+  /** Steps ticked, all time */
+  steps: number;
+  /** Litres of water logged, all time */
+  litres: number;
+  daysLogged: number;
+};
+
 export type Rewards = {
+  records: Records;
   byDay: Record<string, DayXP>;
   today: DayXP;
   total: number;
@@ -152,7 +165,25 @@ export const LEVELS = [
   'Celestial',
 ];
 
-const levelStart = (n: number) => (300 * (n - 1) * n) / 2;
+/** What each level unlocks: something for Lune to wear, or new colours for the orb. */
+export type Unlock = { level: number; kind: 'outfit'; id: LuneOutfit; name: string } | { level: number; kind: 'orb'; id: OrbTheme; name: string };
+
+export const UNLOCKS: Unlock[] = [
+  { level: 2, kind: 'outfit', id: 'bow', name: 'Pink bow' },
+  { level: 3, kind: 'orb', id: 'dawn', name: 'Dawn orb' },
+  { level: 4, kind: 'outfit', id: 'headband', name: 'Spa headband' },
+  { level: 5, kind: 'outfit', id: 'flowers', name: 'Flower crown' },
+  { level: 6, kind: 'orb', id: 'ocean', name: 'Ocean orb' },
+  { level: 7, kind: 'outfit', id: 'sunnies', name: 'Sunglasses' },
+  { level: 8, kind: 'orb', id: 'night', name: 'Night orb' },
+  { level: 9, kind: 'outfit', id: 'scarf', name: 'Aura scarf' },
+  { level: 10, kind: 'orb', id: 'gold', name: 'Gold orb' },
+  { level: 11, kind: 'orb', id: 'pearl', name: 'Pearl orb' },
+  { level: 12, kind: 'outfit', id: 'crown', name: 'Golden crown' },
+];
+
+/** XP needed to reach a level. */
+export const levelStart = (n: number) => (300 * (n - 1) * n) / 2;
 
 export function levelOf(xp: number): Level {
   let n = 1;
@@ -194,6 +225,9 @@ export function rewardsFor(
   let travelGood = 0;
   let spf = 0;
   let moves = 0;
+  let ticks = 0;
+  let water = 0;
+  let logged = 0;
   const good = new Set<string>();
 
   for (let k = config.startedAt; k <= today; k = addDays(k, 1)) {
@@ -204,6 +238,9 @@ export function rewardsFor(
     total += x.total;
     spf += d?.spf?.length ?? 0;
     moves += d?.activity?.length ?? 0;
+    ticks += Object.keys(d?.done ?? {}).length;
+    water += d?.water ?? 0;
+    if (d && (Object.keys(d.done ?? {}).length || d.water)) logged++;
     if (!info.total) continue;
     if (info.p >= 1) perfect++;
     const w = info.exp.find((s) => s.type === 'water');
@@ -289,5 +326,21 @@ export function rewardsFor(
     b('aura', 'Full aura', 'Reach level 9, Aura', 'sparkles', 'aura', level.n, 9),
   ];
 
-  return { byDay, today: todayXP, total, level, league, badges };
+  // Best week ever, from every Monday since the start.
+  let bestWeek = 0;
+  for (let mon = mondayOf(config.startedAt); mon <= today; mon = addDays(mon, 7)) {
+    let xp = 0;
+    for (let j = 0; j < 7; j++) xp += byDay[addDays(mon, j)]?.total ?? 0;
+    bestWeek = Math.max(bestWeek, xp);
+  }
+  const records: Records = {
+    bestStreak: best,
+    perfectDays: perfect,
+    bestWeek,
+    steps: ticks,
+    litres: Math.round(water / 100) / 10,
+    daysLogged: logged,
+  };
+
+  return { records, byDay, today: todayXP, total, level, league, badges };
 }

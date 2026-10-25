@@ -1,8 +1,9 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
-import { DataProvider } from './data';
+import { DataProvider, useData } from './data';
 import { Landing } from './landing';
+import { FaqPage, FeaturesPage, HowPage } from './more';
 import { Privacy, Support } from './pages';
 import { Link, usePath } from './router';
 import { WebApp } from './WebApp';
@@ -11,15 +12,22 @@ import './landing.css';
 
 const NAV: [string, string][] = [
   ['/', 'Home'],
-  ['/app', 'Web app'],
-  ['/support', 'Support'],
-  ['/privacy', 'Privacy'],
+  ['/features', 'Features'],
+  ['/how', 'How it works'],
+  ['/faq', 'FAQ'],
 ];
 
 function Site() {
   const path = usePath();
+  const { user } = useData();
   const page =
-    path === '/privacy' ? (
+    path === '/features' ? (
+      <FeaturesPage />
+    ) : path === '/how' ? (
+      <HowPage />
+    ) : path === '/faq' ? (
+      <FaqPage />
+    ) : path === '/privacy' ? (
       <Privacy />
     ) : path === '/support' ? (
       <Support />
@@ -33,6 +41,7 @@ function Site() {
       <header className="bar">
         <div className="wrap">
           <Link className="brand" to="/">
+            <img src="/icon.png" alt="" width={34} height={34} />
             Daily Ritual
           </Link>
           <nav aria-label="Site">
@@ -40,11 +49,14 @@ function Site() {
               <Link
                 key={to}
                 to={to}
-                className={`${(to === '/' ? path === '/' : path.startsWith(to)) ? 'on' : ''} ${to === '/privacy' ? 'hide-s' : ''}`}>
+                className={`${(to === '/' ? path === '/' : path.startsWith(to)) ? 'on' : ''} ${to === '/how' ? 'hide-s' : ''}`}>
                 {label}
               </Link>
             ))}
           </nav>
+          <Link className={`signin-btn ${path.startsWith('/app') ? 'on' : ''}`} to="/app">
+            {user ? 'Profile' : 'Sign in'}
+          </Link>
         </div>
       </header>
       <main>{page}</main>

@@ -3,12 +3,12 @@
     "name": "Daily Ritual",
     "slug": "daily-ritual",
     "owner": "soul-archive-limited",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "dailyritual",
     "userInterfaceStyle": "automatic",
-    "backgroundColor": "#F2F2F7",
+    "backgroundColor": "#F1F1F4",
     "ios": {
       "bundleIdentifier": "com.soularchive.dailyritual",
       "supportsTablet": true,
@@ -30,7 +30,7 @@
     "android": {
       "package": "com.soularchive.dailyritual",
       "adaptiveIcon": {
-        "backgroundColor": "#090b0a",
+        "backgroundColor": "#F4C7E0",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -45,11 +45,11 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#F2F2F7",
+          "backgroundColor": "#F1F1F4",
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76,
+          "imageWidth": 120,
           "dark": {
-            "backgroundColor": "#000000",
+            "backgroundColor": "#0E0E12",
             "image": "./assets/images/splash-icon.png"
           }
         }
@@ -60,7 +60,7 @@
       [
         "expo-notifications",
         {
-          "color": "#1F9D6E",
+          "color": "#F06FA5",
           "enableRemoteNotifications": false
         }
       ],

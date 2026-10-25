@@ -13,20 +13,8 @@ export function UpNext({ k, info, isToday }: { k: string; info: DayInfo; isToday
   const nu = isToday ? nextUp(info) : null;
   const slot = nu ? SLOTS.find((z) => z.id === nu.slot)! : null;
 
-  if (!nu || !slot) {
-    const all = info.total > 0 && info.n === info.total;
-    return (
-      <Card>
-        <T variant="eyebrow">{isToday ? 'Up next' : 'This day'}</T>
-        <Text style={styles.name}>
-          {all ? 'All done for today' : isToday ? 'Only water left' : `${info.n} of ${info.total} done`}
-        </Text>
-        <T variant="sub">
-          {all ? 'Rest easy. Your glow is safe.' : isToday ? 'Sip through the evening to finish.' : 'Tap any step below to fix it.'}
-        </T>
-      </Card>
-    );
-  }
+  // Nothing left (or a past day): Lune's line above already says how the day went.
+  if (!nu || !slot) return null;
 
   return (
     <Card>
@@ -41,11 +29,7 @@ export function UpNext({ k, info, isToday }: { k: string; info: DayInfo; isToday
           </T>
         ) : null}
       </Animated.View>
-      <SlideToConfirm
-        label="Slide to mark done"
-        onConfirm={() => s.tick(k, nu.step.id)}
-        style={{ marginTop: 14 }}
-      />
+      <SlideToConfirm label="Slide to mark done" onConfirm={() => s.tick(k, nu.step.id)} style={{ marginTop: 14 }} />
     </Card>
   );
 }

@@ -14,6 +14,7 @@ import { exportAll, setKv } from '@/db/repo';
 import type { Config } from '@/db/types';
 import { todayKey } from '@/logic/dates';
 import { bmiOf } from '@/logic/progress';
+import { versionLabel } from '@/updates/useOtaUpdates';
 import { colors, font, minTouch, radius } from '@/theme/tokens';
 
 /** Name, height and a quick weigh-in. */
@@ -193,6 +194,7 @@ export function AboutCard() {
         Intelligence on the device itself, so nothing you ask is sent anywhere. Skin photos never leave your device,
         even if you sign in to sync.
       </Explainer>
+      <Text style={styles.version}>Daily Ritual · {versionLabel()}</Text>
     </Card>
   );
 }
@@ -289,6 +291,7 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.line2,
   },
   tourText: { ...font.semibold, fontSize: 16, color: colors.text },
+  version: { ...font.regular, fontSize: 12, color: colors.dim, textAlign: 'center', paddingTop: 10, paddingBottom: 4 },
   two: { flexDirection: 'row', gap: 10 },
   input: {
     minHeight: minTouch,

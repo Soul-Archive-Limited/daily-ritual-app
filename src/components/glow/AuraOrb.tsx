@@ -12,12 +12,37 @@ import Animated, {
 import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
 
 import { CountUp } from '@/components/bits';
+import type { OrbTheme } from '@/db/types';
 import { font, usePalette } from '@/theme/tokens';
+
+/** Orb colours: base, then three drifting lights. Unlocked by levels. */
+export const ORB_THEMES: Record<OrbTheme, [string, string, string, string]> = {
+  aura: ['#F6D3E2', '#FFD3B4', '#F4AACB', '#BDB0FF'],
+  dawn: ['#FFE3D3', '#FFD0A0', '#FFB3A7', '#FFD9E8'],
+  ocean: ['#D3EEF6', '#A6E2F0', '#8FB8FF', '#B8F0D8'],
+  night: ['#D9D6FB', '#A9ABFF', '#8A8CF7', '#C9B3FF'],
+  gold: ['#FFF0C8', '#FFE08A', '#F6C76A', '#FFD3B4'],
+  pearl: ['#F1EFF6', '#FFFFFF', '#E9E3F7', '#F3E6EE'],
+};
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 /** Soft blob: a colour that fades to nothing at its edge. */
-function Blob({ id, color, cx, cy, r, o = 1 }: { id: string; color: string; cx: number; cy: number; r: number; o?: number }) {
+function Blob({
+  id,
+  color,
+  cx,
+  cy,
+  r,
+  o = 1,
+}: {
+  id: string;
+  color: string;
+  cx: number;
+  cy: number;
+  r: number;
+  o?: number;
+}) {
   return (
     <>
       <Defs>
@@ -32,11 +57,62 @@ function Blob({ id, color, cx, cy, r, o = 1 }: { id: string; color: string; cx: 
   );
 }
 
+/** One colour that slowly orbits the centre, each at its own pace and direction. */
+function Orbit({
+  id,
+  color,
+  cx,
+  cy,
+  r,
+  o,
+  secs,
+  dir,
+  size,
+}: {
+  id: string;
+  color: string;
+  cx: number;
+  cy: number;
+  r: number;
+  o: number;
+  secs: number;
+  dir: 1 | -1;
+  size: number;
+}) {
+  const reduce = useReducedMotion();
+  const t = useSharedValue(0);
+  useEffect(() => {
+    if (reduce) return;
+    t.value = withRepeat(withTiming(1, { duration: secs * 1000, easing: Easing.linear }), -1, false);
+  }, [reduce, t, secs]);
+  const st = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${dir * t.value * 360}deg` }, { scale: 1 + 0.06 * Math.sin(t.value * Math.PI * 2) }],
+  }));
+  return (
+    <Animated.View style={[StyleSheet.absoluteFill, st]}>
+      <Svg viewBox="0 0 200 200" width={size} height={size}>
+        <Blob id={id} color={color} cx={cx} cy={cy} r={r} o={o} />
+      </Svg>
+    </Animated.View>
+  );
+}
+
 /**
- * The aura: a soft glow of the day's colours that breathes slowly, with a thin ring for today's progress
- * and the percentage in big thin type. The signature of Today.
+ * The aura: soft peach, rose and lilac light that slowly swirls, glowing stronger as the day fills up,
+ * with a thin ring for progress and the percentage in big thin type. The signature of Today.
  */
-export function AuraOrb({ p, size = 210, label = 'Today’s glow' }: { p: number; size?: number; label?: string }) {
+export function AuraOrb({
+  p,
+  size = 210,
+  label = 'Today’s glow',
+  theme = 'aura',
+}: {
+  p: number;
+  size?: number;
+  label?: string;
+  theme?: OrbTheme;
+}) {
+  const [base, c1, c2, c3] = ORB_THEMES[theme] ?? ORB_THEMES.aura;
   const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
   const reduce = useReducedMotion();
   const pal = usePalette();
@@ -45,7 +121,7 @@ export function AuraOrb({ p, size = 210, label = 'Today’s glow' }: { p: number
 
   useEffect(() => {
     if (reduce) return;
-    breathe.value = withRepeat(withTiming(1, { duration: 3000, easing: Easing.inOut(Easing.sin) }), -1, true);
+    breathe.value = withRepeat(withTiming(1, { duration: 3200, easing: Easing.inOut(Easing.sin) }), -1, true);
   }, [reduce, breathe]);
 
   useEffect(() => {
@@ -55,9 +131,10 @@ export function AuraOrb({ p, size = 210, label = 'Today’s glow' }: { p: number
   const R = 96;
   const C = 2 * Math.PI * R;
   const ring = useAnimatedProps(() => ({ strokeDashoffset: C * (1 - Math.min(1, prog.value)) }));
+  // Pale in the morning, full glow by the end of the day.
   const glow = useAnimatedStyle(() => ({
-    transform: [{ scale: 1 + 0.05 * breathe.value }],
-    opacity: 0.9 + 0.1 * breathe.value,
+    transform: [{ scale: 0.96 + 0.05 * breathe.value }],
+    opacity: 0.72 + 0.28 * Math.min(1, prog.value) + 0.04 * breathe.value,
   }));
 
   return (
@@ -68,12 +145,14 @@ export function AuraOrb({ p, size = 210, label = 'Today’s glow' }: { p: number
       accessibilityLabel={label}
       accessibilityValue={{ min: 0, max: 100, now: Math.round(p * 100) }}>
       <Animated.View style={[StyleSheet.absoluteFill, glow]}>
-        <Svg viewBox="0 0 200 200" width={size} height={size}>
-          <Blob id={`aBase${uid}`} color="#F7C3D8" cx={100} cy={100} r={86} />
-          <Blob id={`aPeach${uid}`} color="#FFCFA6" cx={74} cy={72} r={62} />
-          <Blob id={`aRose${uid}`} color="#F59AC4" cx={132} cy={82} r={60} />
-          <Blob id={`aLilac${uid}`} color="#B0A0FF" cx={100} cy={140} r={64} />
-          <Blob id={`aShine${uid}`} color="#FFFFFF" cx={78} cy={64} r={30} o={0.55} />
+        <Svg viewBox="0 0 200 200" width={size} height={size} style={StyleSheet.absoluteFill}>
+          <Blob id={`aBase${uid}`} color={base} cx={100} cy={100} r={88} />
+        </Svg>
+        <Orbit id={`aPeach${uid}`} color={c1} cx={70} cy={74} r={62} o={0.95} secs={14} dir={1} size={size} />
+        <Orbit id={`aRose${uid}`} color={c2} cx={134} cy={88} r={60} o={0.9} secs={19} dir={-1} size={size} />
+        <Orbit id={`aLilac${uid}`} color={c3} cx={100} cy={142} r={64} o={0.95} secs={23} dir={1} size={size} />
+        <Svg viewBox="0 0 200 200" width={size} height={size} style={StyleSheet.absoluteFill}>
+          <Blob id={`aShine${uid}`} color="#FFFFFF" cx={80} cy={66} r={30} o={0.5} />
         </Svg>
       </Animated.View>
       <Svg viewBox="0 0 200 200" width={size} height={size} style={StyleSheet.absoluteFill}>
@@ -105,7 +184,14 @@ export function AuraOrb({ p, size = 210, label = 'Today’s glow' }: { p: number
 const styles = StyleSheet.create({
   center: { alignItems: 'center', justifyContent: 'center' },
   numRow: { flexDirection: 'row', alignItems: 'flex-start' },
-  num: { ...font.thin, fontSize: 62, lineHeight: 66, letterSpacing: -2.5, color: '#121214', fontVariant: ['tabular-nums'] },
+  num: {
+    ...font.thin,
+    fontSize: 62,
+    lineHeight: 66,
+    letterSpacing: -2.5,
+    color: '#121214',
+    fontVariant: ['tabular-nums'],
+  },
   pct: { ...font.regular, fontSize: 20, marginTop: 8, color: 'rgba(18,18,20,0.6)' },
   label: {
     ...font.semibold,
@@ -116,4 +202,3 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 });
-

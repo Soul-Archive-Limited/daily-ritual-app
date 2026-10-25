@@ -1,5 +1,7 @@
 // The website's copies of the app's signature pieces: Lune, the aura orb, medals and quest rings.
 // Same shapes and colours as src/components/Lune.tsx and src/components/glow/*.
+import { useState } from 'react';
+
 import type { Badge } from '@/logic/rewards';
 
 export type LuneMood = 'happy' | 'cheer' | 'worried' | 'sleepy';
@@ -20,16 +22,18 @@ const ARMS: Record<LuneMood, [number, number]> = {
   sleepy: [14, -14],
 };
 
-function Arm({ x, y, a }: { x: number; y: number; a: number }) {
+function Arm({ x, y, a, wave }: { x: number; y: number; a: number; wave?: boolean }) {
   const l = 28;
   return (
     <g transform={`translate(${x} ${y}) rotate(${a})`}>
-      <rect x={-8} y={-4} width={16} height={l + 4} rx={8} fill={ARM} />
-      <rect x={1} y={0} width={7} height={l} rx={3.5} fill={SHADE} opacity={0.35} />
-      <circle cx={0} cy={l} r={9.5} fill={ARM} />
-      <circle cx={-6} cy={l + 6} r={3.6} fill={ARM} />
-      <circle cx={0} cy={l + 8} r={3.6} fill={ARM} />
-      <circle cx={6} cy={l + 6} r={3.6} fill={ARM} />
+      <g className={wave ? 'arm wave' : 'arm'}>
+        <rect x={-8} y={-4} width={16} height={l + 4} rx={8} fill={ARM} />
+        <rect x={1} y={0} width={7} height={l} rx={3.5} fill={SHADE} opacity={0.35} />
+        <circle cx={0} cy={l} r={9.5} fill={ARM} />
+        <circle cx={-6} cy={l + 6} r={3.6} fill={ARM} />
+        <circle cx={0} cy={l + 8} r={3.6} fill={ARM} />
+        <circle cx={6} cy={l + 6} r={3.6} fill={ARM} />
+      </g>
     </g>
   );
 }
@@ -64,8 +68,12 @@ function Eye({ x, y, r, kind }: { x: number; y: number; r: number; kind: 'open' 
   );
 }
 
-/** Lune, the lavender bunny. Bobs and blinks with CSS (off with reduced motion). */
+/**
+ * Lune, the lavender bunny. Breathes, blinks, twitches her ears and waves with CSS; click or tap
+ * her and she hops. Off with reduced motion.
+ */
 export function Lune({ mood = 'happy', size = 120, id = 'l' }: { mood?: LuneMood; size?: number; id?: string }) {
+  const [hop, setHop] = useState(0);
   const [el, er] = EARS[mood];
   const [al, ar] = ARMS[mood];
   const kind = mood === 'cheer' ? 'joy' : mood === 'sleepy' ? 'closed' : 'open';
@@ -73,7 +81,13 @@ export function Lune({ mood = 'happy', size = 120, id = 'l' }: { mood?: LuneMood
   const r = mood === 'happy' ? 11 : 10;
   const fur = `url(#fur-${id})`;
   return (
-    <svg className="lune" viewBox="0 0 200 220" width={size} height={size * 1.1} aria-hidden="true">
+    <svg
+      className={`lune ${hop % 2 ? 'hop-a' : hop ? 'hop-b' : ''}`}
+      viewBox="0 0 200 220"
+      width={size}
+      height={size * 1.1}
+      aria-hidden="true"
+      onClick={() => setHop((h) => h + 1)}>
       <defs>
         <linearGradient id={`fur-${id}`} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#ECEBFF" />
@@ -91,8 +105,10 @@ export function Lune({ mood = 'happy', size = 120, id = 'l' }: { mood?: LuneMood
           [120, er],
         ].map(([px, a]) => (
           <g key={px} transform={`translate(${px} 62) rotate(${a})`}>
-            <ellipse cx={0} cy={-38} rx={15} ry={40} fill={fur} />
-            <ellipse cx={0} cy={-36} rx={7.5} ry={29} fill={`url(#ear-${id})`} />
+            <g className={px === 80 ? 'ear ear-l' : 'ear ear-r'}>
+              <ellipse cx={0} cy={-38} rx={15} ry={40} fill={fur} />
+              <ellipse cx={0} cy={-36} rx={7.5} ry={29} fill={`url(#ear-${id})`} />
+            </g>
           </g>
         ))}
         <circle cx={140} cy={178} r={13} fill="#fff" />
@@ -152,7 +168,7 @@ export function Lune({ mood = 'happy', size = 120, id = 'l' }: { mood?: LuneMood
           </>
         ) : null}
         <Arm x={70} y={152} a={al} />
-        <Arm x={130} y={152} a={ar} />
+        <Arm x={130} y={152} a={ar} wave={mood === 'happy'} />
       </g>
     </svg>
   );
@@ -303,6 +319,114 @@ export function QuestRing({ p }: { p: number }) {
           transform="rotate(-90 17 17)"
         />
       ) : null}
+    </svg>
+  );
+}
+
+/* ---------- Water body (same as the app's) ---------- */
+
+const BW = 120;
+const BH = 240;
+function smooth(pts: [number, number][]) {
+  const n = pts.length;
+  let d = `M${pts[0][0]} ${pts[0][1]}`;
+  for (let i = 0; i < n; i++) {
+    const p0 = pts[(i - 1 + n) % n];
+    const p1 = pts[i];
+    const p2 = pts[(i + 1) % n];
+    const p3 = pts[(i + 2) % n];
+    d += `C${(p1[0] + (p2[0] - p0[0]) / 6).toFixed(1)} ${(p1[1] + (p2[1] - p0[1]) / 6).toFixed(1)} ${(p2[0] - (p3[0] - p1[0]) / 6).toFixed(1)} ${(p2[1] - (p3[1] - p1[1]) / 6).toFixed(1)} ${p2[0]} ${p2[1]}`;
+  }
+  return `${d}Z`;
+}
+const HALF: [number, number][] = [
+  [65, 50],
+  [67, 58],
+  [84, 63],
+  [94, 74],
+  [98, 108],
+  [100, 140],
+  [96, 150],
+  [90, 140],
+  [87, 108],
+  [83, 86],
+  [80, 116],
+  [84, 142],
+  [81, 186],
+  [78, 222],
+  [80, 232],
+  [66, 234],
+  [65, 222],
+  [66, 186],
+  [61, 154],
+];
+const BODY = smooth([
+  ...HALF,
+  ...[...HALF]
+    .reverse()
+    .slice(1, -1)
+    .map(([x, y]) => [BW - x, y] as [number, number]),
+]);
+const HEAD = 'M60 6a21 23 0 1 0 0.01 0Z';
+// A wide wave strip; it slides sideways forever and rises with the level.
+const WAVE = (() => {
+  let d = 'M0 10';
+  for (let x = 0; x <= 360; x += 6) d += `L${x} ${(10 + Math.sin(x / 14) * 4.5).toFixed(1)}`;
+  return `${d}L360 ${BH + 20}L0 ${BH + 20}Z`;
+})();
+
+export function healthTint(f: number) {
+  if (f >= 1) return { a: '#8BE3AE', b: '#46B37A', word: 'Glowing' };
+  if (f >= 0.5) return { a: '#FFE08A', b: '#E5B23F', word: 'Getting there' };
+  return { a: '#FFC1B5', b: '#F07F6E', word: 'Thirsty' };
+}
+
+/** A body that fills with moving water; red → amber → green as the Health routine is done. */
+export function WaterBody({
+  p,
+  health,
+  onTap,
+  size = 1,
+}: {
+  p: number;
+  health: number;
+  onTap?: () => void;
+  size?: number;
+}) {
+  const t = healthTint(health);
+  const y = 8 + (1 - Math.min(1, p)) * (BH - 8) - 10;
+  return (
+    <svg
+      viewBox={`0 0 ${BW} ${BH}`}
+      width={BW * 0.8 * size}
+      height={BH * 0.8 * size}
+      className="wbody"
+      onClick={onTap}
+      role={onTap ? 'button' : 'img'}
+      aria-label={onTap ? 'Add a glass of water' : `Water ${Math.round(p * 100)}%`}>
+      <defs>
+        <clipPath id="wb-clip">
+          <path d={BODY} />
+          <path d={HEAD} />
+        </clipPath>
+        <linearGradient id="wb-skin" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor={t.a} stopOpacity={0.55} />
+          <stop offset="1" stopColor={t.b} stopOpacity={0.55} />
+        </linearGradient>
+        <linearGradient id="wb-water" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#8FE3F5" />
+          <stop offset="1" stopColor="#2F8FD0" />
+        </linearGradient>
+      </defs>
+      <g clipPath="url(#wb-clip)">
+        <rect width={BW} height={BH} fill="url(#wb-skin)" />
+        <g className="wlevel" style={{ transform: `translateY(${y}px)` }}>
+          <path className="wave back" d={WAVE} fill="#7FD3EA" opacity={0.55} />
+          <path className="wave" d={WAVE} fill="url(#wb-water)" />
+        </g>
+      </g>
+      <path d={BODY} fill="none" stroke={t.b} strokeWidth={2} />
+      <path d={HEAD} fill="none" stroke={t.b} strokeWidth={2} />
     </svg>
   );
 }

@@ -9,7 +9,7 @@ import { useReveal, useScrollP, useTilt } from './scroll';
 
 /* ---------- Phone and its screens ---------- */
 
-function Phone({
+export function Phone({
   children,
   className = '',
   style,
@@ -32,7 +32,7 @@ function Phone({
   );
 }
 
-function TodayScreen() {
+export function TodayScreen() {
   return (
     <div className="scr pearl">
       <div className="s-date">Sunday 25 October</div>
@@ -73,7 +73,7 @@ function TodayScreen() {
 
 const NIGHT_STEPS = ['Brush teeth', 'Shower', 'Face wash', 'Face exfoliant', 'Moisturiser', 'Lip balm'];
 
-function NightScreen() {
+export function NightScreen() {
   return (
     <div className="scr pearl">
       <div className="s-night">
@@ -106,7 +106,7 @@ function NightScreen() {
   );
 }
 
-function RewardsScreen() {
+export function RewardsScreen() {
   return (
     <div className="scr pearl">
       <div className="s-bold" style={{ fontSize: 26, marginTop: 6 }}>
@@ -147,7 +147,7 @@ function RewardsScreen() {
   );
 }
 
-function CelebrateScreen() {
+export function CelebrateScreen() {
   return (
     <div className="scr aura">
       <i className="confetti" />

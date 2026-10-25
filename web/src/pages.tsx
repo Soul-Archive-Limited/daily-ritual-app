@@ -11,9 +11,12 @@ export function Footer() {
         <span>
           © {new Date().getFullYear()} {COMPANY}
         </span>
-        <Link to="/privacy">Privacy</Link>
+        <Link to="/features">Features</Link>
+        <Link to="/how">How it works</Link>
+        <Link to="/faq">FAQ</Link>
         <Link to="/support">Support</Link>
-        <Link to="/app">Web app</Link>
+        <Link to="/privacy">Privacy</Link>
+        <Link to="/app">Sign in</Link>
       </div>
     </footer>
   );

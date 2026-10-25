@@ -91,7 +91,10 @@ function apply(data: Data, d: Doc): Data {
     }
     case 'checkin': {
       const rest = data.checkins.filter((x) => x.id !== d.id);
-      return { ...data, checkins: gone ? rest : [...rest, b as CheckinLite].sort((x, y) => (x.date < y.date ? 1 : -1)) };
+      return {
+        ...data,
+        checkins: gone ? rest : [...rest, b as CheckinLite].sort((x, y) => (x.date < y.date ? 1 : -1)),
+      };
     }
     case 'weighin': {
       const rest = data.weighins.filter((x) => x.id !== d.id);

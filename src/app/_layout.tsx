@@ -3,18 +3,21 @@ import { DarkTheme, DefaultTheme, ThemeProvider, Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { SQLiteProvider } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
+import { Intro } from '@/components/Intro';
 import { sheetOptions } from '@/components/nav';
 import { ToastHost } from '@/components/ToastHost';
+import { AppearanceLoader } from '@/data/appearance';
 import { StoreProvider, useSetup, useStore } from '@/data/store';
 import { migrateDb } from '@/db/schema';
 import { NotificationRouter } from '@/notifications/NotificationRouter';
 import { setupNotificationHandler } from '@/notifications/schedule';
 import { SunProvider } from '@/sun/SunProvider';
 import { SyncProvider } from '@/sync/SyncProvider';
+import { useOtaUpdates } from '@/updates/useOtaUpdates';
 import { useWidgetSync } from '@/widgets/useWidgetSync';
 import { colors, FONT_FILES, usePalette } from '@/theme/tokens';
 
@@ -32,14 +35,16 @@ function useNavTheme() {
   };
 }
 
-/** Hide the splash once the data has loaded (or setup is needed). */
+/** Hide the splash once the data has loaded (or setup is needed), then play the short intro. */
 function Ready() {
   const ready = !!useStore();
   const { needsSetup } = useSetup();
+  const [intro, setIntro] = useState(true);
+  const endIntro = useCallback(() => setIntro(false), []);
   useEffect(() => {
     if (ready || needsSetup) SplashScreen.hideAsync();
   }, [ready, needsSetup]);
-  return null;
+  return intro ? <Intro start={ready || needsSetup} onDone={endIntro} /> : null;
 }
 
 /** The app once set up; the setup flow for someone new. */
@@ -51,6 +56,7 @@ function Routes() {
       <Stack.Protected guard={!needsSetup}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="profile" options={sheetOptions('Profile')} />
+        <Stack.Screen name="ask" options={sheetOptions('Ask Lune')} />
         <Stack.Screen name="step/[id]" options={sheetOptions('Step')} />
         <Stack.Screen name="product/[id]" options={sheetOptions('Product')} />
         <Stack.Screen name="product/new" options={sheetOptions('Add a product', 0.6)} />
@@ -67,6 +73,7 @@ function Routes() {
 
 export default function RootLayout() {
   const theme = useNavTheme();
+  useOtaUpdates();
   const [fontsLoaded, fontError] = useFonts(FONT_FILES);
   // Keep the splash up until the fonts are in, so nothing flashes in the system font.
   if (!fontsLoaded && !fontError) return null;
@@ -75,14 +82,15 @@ export default function RootLayout() {
       <ThemeProvider value={theme}>
         <StatusBar style="auto" />
         <SQLiteProvider databaseName="ritual.db" onInit={migrateDb}>
+          <AppearanceLoader />
           <StoreProvider>
             <SunProvider>
-              <Ready />
               <NotificationRouter />
               <SyncProvider>
                 <Routes />
               </SyncProvider>
               <ToastHost />
+              <Ready />
             </SunProvider>
           </StoreProvider>
         </SQLiteProvider>

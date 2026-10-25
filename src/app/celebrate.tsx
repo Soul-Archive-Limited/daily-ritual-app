@@ -22,7 +22,7 @@ import { Lune } from '@/components/Lune';
 import { useRewards } from '@/data/useRewards';
 import { useStore } from '@/data/store';
 import { addDays, parseKey, todayKey } from '@/logic/dates';
-import { LEVELS } from '@/logic/rewards';
+import { LEVELS, UNLOCKS } from '@/logic/rewards';
 import { streakCalc } from '@/logic/scoring';
 import { AURA, font, SLOTS } from '@/theme/tokens';
 
@@ -84,7 +84,16 @@ export default function Celebrate() {
 
   const [thin, bold, line] =
     kind === 'level'
-      ? [`Level ${r.level.n}`, `${r.level.name}.`, `Your glow grew. Next up: ${nextLevel}.`]
+      ? [
+          `Level ${r.level.n}`,
+          `${r.level.name}.`,
+          (() => {
+            const u = UNLOCKS.find((x) => x.level === r.level.n);
+            return u
+              ? `You unlocked the ${u.name}${u.kind === 'outfit' ? ' for Lune' : ''}. Find it in Rewards.`
+              : `Your glow grew. Next up: ${nextLevel}.`;
+          })(),
+        ]
       : kind === 'badge' && badge
         ? ['New badge', `${badge.name}.`, badge.desc]
         : perfect
@@ -102,7 +111,11 @@ export default function Celebrate() {
 
       <View style={[styles.body, { paddingTop: insets.top + 24 }]}>
         <Animated.View entering={reduce ? undefined : ZoomIn.springify().damping(12)}>
-          {badge ? <Medal badge={badge} size={132} /> : <Lune mood="cheer" size={170} label="Lune is celebrating" />}
+          {badge ? (
+            <Medal badge={badge} size={132} />
+          ) : (
+            <Lune mood="cheer" size={170} label="Lune is celebrating" outfit={s?.config.look?.outfit} />
+          )}
         </Animated.View>
 
         {kind === 'ritual' && streak.cur > 0 ? (

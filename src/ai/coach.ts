@@ -1,5 +1,5 @@
 // Free, private AI features on Apple's on-device model. Nothing leaves the device.
-import { errorCode, isAvailable, respond } from 'on-device-ai';
+import { errorCode, isAvailable, respond, type UnavailableReason } from 'on-device-ai';
 import { useEffect, useState } from 'react';
 
 import type { Review } from '@/db/types';
@@ -21,6 +21,33 @@ export function useOnDeviceAI() {
       .catch(() => setOk(false));
   }, []);
   return ok;
+}
+
+/** Whether Apple Intelligence can answer here, and if not, why (for the Ask Lune screen). */
+export function useAIStatus() {
+  const [st, setSt] = useState<{ checked: boolean; ok: boolean; reason?: UnavailableReason }>({ checked: false, ok: false });
+  useEffect(() => {
+    isAvailable()
+      .then((a) => setSt({ checked: true, ok: a.available, reason: a.reason }))
+      .catch(() => setSt({ checked: true, ok: false, reason: 'unknown' }));
+  }, []);
+  return st;
+}
+
+/** What to do when Apple Intelligence can't answer on this phone. */
+export function unavailableText(reason?: UnavailableReason) {
+  switch (reason) {
+    case 'osTooOld':
+      return 'Asking me needs iOS 26 or later. Update your iPhone in Settings › General › Software Update.';
+    case 'deviceNotEligible':
+      return 'Asking me needs an iPhone that runs Apple Intelligence (iPhone 15 Pro or newer). Everything else in the app works the same.';
+    case 'appleIntelligenceNotEnabled':
+      return 'Turn on Apple Intelligence in Settings › Apple Intelligence & Siri, then come back. It’s free and stays on your phone.';
+    case 'modelNotReady':
+      return 'Apple Intelligence is still downloading to your iPhone. Keep it on Wi-Fi and charging, then try again soon.';
+    default:
+      return 'Apple Intelligence isn’t available on this iPhone right now.';
+  }
 }
 
 /** A friendly sentence for a failed request. */
